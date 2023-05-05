@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Fish Game</h1>
+    <button id = 'generateGameBtn'>Generate New Game ID</button>
+    <button id = 'joinGameBtn'>Join Game</button>
+    <h2>Current game id is:</h2>
+    <h2 id="gameIdTxt"></h2>
+    <h2>Current client id is:</h2>
+    <h2 id="clientIdTxt">NONE</h2>
+    <input type = 'text' id = 'joinGameIdTxt'>
+    <div id  = 'playersListDiv'></div>
+    <div id  = 'boardDiv'></div>
+
+    <script>
+        let clientId = null;
+        let gameId = null;
+        let playerName = null;
+        let NO_GAME_TEXT = "NONE YET";
+
+        // Create host web socket on port 9090
+        let ws = new WebSocket("ws://localhost:9090")
+
+        const generateGameBtn = document.getElementById("generateGameBtn");
+        const joinGameBtn = document.getElementById("joinGameBtn");
+        const joinGameIdTxt = document.getElementById("joinGameIdTxt");
+        const gameIdTxt = document.getElementById("gameIdTxt");
+        const clientIdTxt = document.getElementById("clientIdTxt");
+        const divPlayers = document.getElementById("playersListDiv");
+        const boardDiv = document.getElementById("boardDiv");
+
+        // Creating new game logic 
+        generateGameBtn.addEventListener("click", e => {
+            const payload = {
+                "method": "create",
+                "clientId": clientId
+            }
+            ws.send(JSON.stringify(payload));
+        })
+
+        // Joining game logic 
+        joinGameBtn.addEventListener("click", e => {
+            // If not already in a game, read text in from box
+            if (gameId === null) gameId = joinGameIdTxt.value;
+            const payload = {
+                "method": "join",
+                "clientId": clientId,
+                "gameId": gameId
+            }
+            ws.send(JSON.stringify(payload));
+        })
+
+        // Connect event logic through 
+        ws.onmessage = message => {
+            
+            // Parse payload sent from event 
+            const response = JSON.parse(message.data);
+            // if (response.game.id === undefined) {
+            //     response.game.id = NO_GAME_TEXT;
+            // }
+
+            // Initial connection to game: log client id to console and display
+            if (response.method === "connect") {
+                // gameIdTxt.textContent = gameId;
+                clientIdTxt.textContent = response.clientId;
+                clientId = response.clientId;
+                console.log("Client id Set successfully " + response.clientId)
+            }
+
+            // Creating game: log game id to console and display
+            if (response.method === "create") {
+                gameIdTxt.textContent = response.game.id;
+                console.log("game successfully created with id " + response.game.id + " with " + response.game.balls + " balls")  
+            }
+            
+
+
+            // Update board with moves
+            if (response.method === "update") {
+                //{1: "red", 1}
+                if (!response.game.state) return;
+                for(const b of Object.keys(response.game.state))
+                {
+                    // const color = response.game.state[b];
+                    const name = response.game.state[b];
+                    const ballObject = document.getElementById("ball" + b);
+                    ballObject.textContent = name;
+                }
+
+            }
+
+            // When a player joins the game, add their name and re-render player list
+            if (response.method === "join"){
+                const game = response.game;
+
+                // Remove all players from list 
+                while(divPlayers.firstChild)
+                    divPlayers.removeChild (divPlayers.firstChild)
+
+                // Redo player list
+                game.clients.forEach (c => {
+                    const d = document.createElement("div");
+                    d.style.width = "200px";
+                    // d.style.background = c.name;
+                    d.textContent = c.name;
+                    divPlayers.appendChild(d);
+                    // Set this player's name
+                    if (c.clientId === clientId) playerName = c.name;
+                })
+
+                // Clear then draw initial board
+                while(boardDiv.firstChild)
+                boardDiv.removeChild (boardDiv.firstChild)
+                for (let i = 0; i < game.balls; i++){
+                    const b = document.createElement("button");
+                    b.id = "ball" + (i+1);
+                    b.tag = i+1
+                    b.textContent = i+1;
+                    b.style.width = "150px"
+                    b.style.height = "150px"
+                    // Event listener to signal when one player clicks a square
+                    b.addEventListener("click", e => {
+                        // b.style.background = playerColor
+                        b.textContent = playerName;
+                        const payload = {
+                            "method": "play",
+                            "clientId": clientId,
+                            "gameId": gameId,
+                            "ballId": b.tag,
+                            "name": playerName
+                        }
+                        ws.send(JSON.stringify(payload))
+                    })
+                    boardDiv.appendChild(b);
+                }
+
+
+
+
+            }
+        }
+    </script>
+</body>
+</html>
