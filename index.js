@@ -2,6 +2,7 @@
 
 // Web socket setup
 const http = require("http");
+const { client } = require("websocket");
 const app = require("express")();
 app.get("/", (req,res)=> res.sendFile(__dirname + "/index.html"))
 
@@ -13,14 +14,14 @@ const httpServer = http.createServer();
 httpServer.listen(9090, () => console.log("Listening.. on 9090"))
 
 // Keep track of clients and games
+// Players also includes AI players
 const clients = {};
+const players = {};
 const games = {};
 
 // Global variables
 const MAX_PLAYERS = 2;
-const GAME_NAMES = ["Horse", "Pig", "Dog", "Cat", "Parrot", "Iguana"];
-// TODO later this should not be constnat 
-const NAME_LIST = ["Amy", "Huit", "Shruti", "Will"];
+const GAME_NAMES = ["Horse", "Pig", "Dog", "Cat", "Parrot", "Iguana"];// TODO 
 
 // Server
 const wsServer = new websocketServer({
@@ -45,7 +46,9 @@ wsServer.on("request", request => {
             games[gameId] = {
                 "id": gameId,
                 "balls": 20,
-                "clients": []
+                "clients": [],
+                "playing": false,
+                "message": ""
             }
 
             // Data to return back to game HTML
@@ -61,6 +64,7 @@ wsServer.on("request", request => {
         if (result.method === "join") {
 
             const clientId = result.clientId;
+            const name = result.name;
             const gameId = result.gameId;
             const game = games[gameId];
 
@@ -70,13 +74,17 @@ wsServer.on("request", request => {
             // Have we reached the max number of players?
             if (game.clients.length >= MAX_PLAYERS) 
             {
-                // TODO alert them 
+                const payload = {
+                    "method": "alert",
+                    "message": "Sorry, this game is maxed out on players!"
+                }
+                connection.send(JSON.stringify(payload));
                 return;
             }
 
             // Assign name based on # player to enter game
-            // TODO players can choose names?
-            const name =  NAME_LIST[game.clients.length]
+    
+            // const name =  NAME_LIST[game.clients.length]
             game.clients.push({
                 "clientId": clientId,
                 "name": name,
@@ -84,7 +92,15 @@ wsServer.on("request", request => {
             })
             // Start the game once we reach 4 players
             // TODO make it so we don't need max players
-            if (game.clients.length === MAX_PLAYERS) updateGameState();
+            if (game.clients.length === MAX_PLAYERS) {
+                game.playing = true;
+                const payload = {
+                    "method": "alert",
+                    "message": "The game has started."
+                }
+                connection.send(JSON.stringify(payload));
+                updateGameState();
+            }
 
             // Inform each client of the game status
             const payload = {
@@ -99,6 +115,7 @@ wsServer.on("request", request => {
         // A user makes a move
         // TODO change all of this lol 
         if (result.method === "play") {
+            console.log("PLAYING A MOVE");
             const gameId = result.gameId;
             const ballId = result.ballId;
             const name = result.name;
@@ -111,20 +128,37 @@ wsServer.on("request", request => {
 
         // A user requests another player for a card TODO 
         if (result.method === "requestCard") {
+            console.log("PLAYING A MOVE SCORE CHANGE");
             const gameId = result.gameId;
             const requesterID = result.requesterID;
             const requesteeName = result.requesteeName;
             if (!(requesteeName === undefined) && requesterID in clients) {
-                // TODO check valid request given their hand
-                // TODO check if player neeeds to return
-                // TODO player's hands are influenced
-                console.log("requestee name is "+requesteeName)
-                console.log(games[gameId].clients);
+                // Find requestee and requester client objects
+                let requesterDict = undefined;
+                let requesteeDict = undefined;
                 for (var i = 0; i < games[gameId].clients.length; ++i) {
                     let clientDict = games[gameId].clients[i];
                     if (clientDict.name === requesteeName) {
                         clientDict.score -= 1;
+                        requesteeDict = clientDict;
                     }
+                    if (clientDict.clientId === requesterID) {
+                        requesterDict = clientDict;
+                    }
+                }
+                // TODO check valid request given their hand
+                // TODO check if player neeeds to return
+                // TODO player's hands are influenced
+                if (!(requesterDict === undefined) && !(requesteeDict === undefined))
+                {
+                    let fishText = requesterDict.name + " made a move on " + requesteeDict.name;
+                    const payload = {
+                        "method": "fishTextUpdate",
+                        "fishText": fishText
+                    }
+                    games[gameId].clients.forEach(c => {
+                        clients[c.clientId].connection.send(JSON.stringify(payload))
+                    })
                 }
             } 
         }

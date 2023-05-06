@@ -8,24 +8,39 @@
 <body>
     <h1>Fish Game</h1>
     <button id = 'generateGameBtn'>Generate New Game ID</button>
+    <p>Generated game id is:</p>
+    <p id="gameIdTxt"></p>
+    <p>Current client id is:</p>
+    <p id="clientIdTxt">NONE</p>
+
+    <div>
+    <input type = 'text' id = 'joinGameIdTxt' placeholder='Enter game ID'>
+    </div>
+
+    <div>
+    <input type = 'text' id = 'joinGameNameTxt' placeholder='Enter your name'>
+    </div>
     <button id = 'joinGameBtn'>Join Game</button>
-    <h2>Current game id is:</h2>
-    <h2 id="gameIdTxt"></h2>
-    <h2 id="gameIdTxt"></h2>
-    <h2>Current client id is:</h2>
-    <h2 id="clientIdTxt">NONE</h2>
-    <input type = 'text' id = 'joinGameIdTxt'>
-    <input type = 'text' id = 'joinGameNameTxt'>
-    <h2>Score is</h2>
-    <h2 id="scoreTracker"></h2>
-    <div id  = 'playersListDiv'></div>
-    <div id  = 'boardDiv'></div>
+
+    <p id="gameMessage">Please join a game.</p>
+
+    <p>Player list:</p>
+    <div id='playersListDiv'></div>
+
+    <h2>Gameplay</h2>
+    <div id='gameTextDiv'></div>
+
+    <h2>Ignore the board below this </h2>
+    <p>Your score is</p>
+    <p id="scoreTracker"></p>
+    <div id='boardDiv'></div>
+    
 
     <script>
+        let gameStarted = false;
         let clientId = null;
         let gameId = null;
         let playerName = null;
-        let NO_GAME_TEXT = "NONE YET";
 
         // Create host web socket on port 9090
         let ws = new WebSocket("ws://localhost:9090")
@@ -39,6 +54,8 @@
         const divPlayers = document.getElementById("playersListDiv");
         const boardDiv = document.getElementById("boardDiv");
         const scoreTracker = document.getElementById("scoreTracker");
+        const gameMessage = document.getElementById("gameMessage");
+        const gameTextDiv = document.getElementById("gameTextDiv");
 
         // Creating new game logic 
         generateGameBtn.addEventListener("click", e => {
@@ -71,9 +88,6 @@
             
             // Parse payload sent from event 
             const response = JSON.parse(message.data);
-            // if (response.game.id === undefined) {
-            //     response.game.id = NO_GAME_TEXT;
-            // }
 
             // Initial connection to game: log client id to console and display
             if (response.method === "connect") {
@@ -83,6 +97,11 @@
                 console.log("Client id Set successfully " + response.clientId)
             }
 
+            // Display alert messages
+            if (response.method === "alert") {
+                gameMessage.textContent = response.message;
+            }
+
             // Creating game: log game id to console and display
             if (response.method === "create") {
                 gameIdTxt.textContent = response.game.id;
@@ -90,10 +109,24 @@
             }
             
 
+            // Fish text play
+            if (response.method === "fishTextUpdate") {
+                // Add fish gameplay text
+                const newText = document.createElement("p");
+                newText.textContent = response.fishText;
+                gameTextDiv.appendChild(newText);
+            }
 
             // Update board with moves
             if (response.method === "update") {
-                //{1: "red", 1}
+                console.log("UPDATING BOARD");
+                
+                // Game message display, if there is one
+                if (response.game.message.length > 0) {
+                    gameMessage.textContent = response.game.message;
+                }
+                
+                // Update squares lmao 
                 if (!response.game.state) return;
                 for(const b of Object.keys(response.game.state))
                 {
@@ -101,12 +134,12 @@
                     const ballObject = document.getElementById("ball" + b);
                     ballObject.textContent = name;
                 }
-                // Update client scores 
+
+                // Update client score if applicable
                 response.game.clients.forEach (c => {
                     // Set this player's name
                     if (c.clientId === clientId) scoreTracker.textContent = c.score;
-                })
-                
+                })  
 
             }
 
@@ -129,41 +162,40 @@
                     if (c.clientId === clientId) playerName = c.name;
                 })
 
-                // Clear then draw initial board
-                while(boardDiv.firstChild)
-                boardDiv.removeChild (boardDiv.firstChild)
-                for (let i = 0; i < game.balls; i++){
-                    const b = document.createElement("button");
-                    b.id = "ball" + (i+1);
-                    b.tag = i+1
-                    b.textContent = i+1;
-                    b.style.width = "150px"
-                    b.style.height = "150px"
-                    // Event listener to signal when one player clicks a square
-                    b.addEventListener("click", e => {
-                        let lastPlayer = b.textContent;
-                        b.textContent = playerName;
-                        const payload = {
-                            "method": "play",
-                            "clientId": clientId,
-                            "gameId": gameId,
-                            "ballId": b.tag,
-                            "name": playerName
-                        }
-                        ws.send(JSON.stringify(payload))
-                        const payload2 = {
-                            "method": "requestCard",
-                            "requesterID": clientId,
-                            "requesteeName": lastPlayer,
-                            "gameId": gameId
-                        }
-                        ws.send(JSON.stringify(payload2))
-                    })
-                    boardDiv.appendChild(b);
+                // Clear then draw initial board, if game is playing
+                if (game.playing) {
+                    while(boardDiv.firstChild)
+                    boardDiv.removeChild (boardDiv.firstChild)
+                    for (let i = 0; i < game.balls; i++){
+                        const b = document.createElement("button");
+                        b.id = "ball" + (i+1);
+                        b.tag = i+1
+                        b.textContent = i+1;
+                        b.style.width = "150px"
+                        b.style.height = "150px"
+                        // Event listener to signal when one player clicks a square
+                        b.addEventListener("click", e => {
+                            let lastPlayer = b.textContent;
+                            b.textContent = playerName;
+                            const payload = {
+                                "method": "play",
+                                "clientId": clientId,
+                                "gameId": gameId,
+                                "ballId": b.tag,
+                                "name": playerName
+                            }
+                            ws.send(JSON.stringify(payload))
+                            const payload2 = {
+                                "method": "requestCard",
+                                "requesterID": clientId,
+                                "requesteeName": lastPlayer,
+                                "gameId": gameId
+                            }
+                            ws.send(JSON.stringify(payload2))
+                        })
+                        boardDiv.appendChild(b);
+                    }    
                 }
-
-
-
 
             }
         }
