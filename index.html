@@ -27,6 +27,21 @@
     <p>Player list:</p>
     <div id='playersListDiv'></div>
 
+    
+    <div id='makeMoveDiv'>
+        <h2>Your turn to make a move</h2>
+        <label for="playerChoiceDiv">Choose an opposing player to ask for a card:</label>
+        <div name="playerChoiceDiv" id="playerChoiceDiv"></div>
+        <br/>
+        <label for="suitChoiceDiv">Choose a suit:</label>
+        <div name="suitChoiceDiv" id="suitChoiceDiv"></div>
+        <br/>
+        <label for="rankChoiceDiv">Choose a rank:</label>
+        <div name="rankChoiceDiv" id="rankChoiceDiv"></div>
+        <br/>
+        <button id='submitMoveBtn'>Submit Move</button>
+    </div>
+
     <h2>Gameplay</h2>
     <div id='gameTextDiv'></div>
 
@@ -37,10 +52,19 @@
     
 
     <script>
+        // Next todos:
+        // Add move submit logic 
+        // Handle on backend
+        // Loop in huit script
+
+
         let gameStarted = false;
         let clientId = null;
         let gameId = null;
         let playerName = null;
+
+        const RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"];
+        const SUITS = ["Hearts", "Spades", "Diamonds", "Clubs"];
 
         // Create host web socket on port 9090
         let ws = new WebSocket("ws://localhost:9090")
@@ -56,6 +80,11 @@
         const scoreTracker = document.getElementById("scoreTracker");
         const gameMessage = document.getElementById("gameMessage");
         const gameTextDiv = document.getElementById("gameTextDiv");
+
+        const playerChoice = document.getElementById("playerChoiceDiv");
+        const rankChoice = document.getElementById("rankChoice");
+        const suitChoice = document.getElementById("suitChoice");
+        const submitMoveBtn = document.getElementById("submitMoveBtn");
 
         // Creating new game logic 
         generateGameBtn.addEventListener("click", e => {
@@ -80,6 +109,28 @@
                 "gameId": gameId
             }
             // TODO issue of duplicate names?
+            ws.send(JSON.stringify(payload));
+        })
+
+        // Submitting move logic
+        submitMoveBtn.addEventListener("click", e => {
+            // If not already in a game, read text in from box
+            if (gameStarted === false) {
+                return;
+            }
+            
+            let requesteeName = document.querySelector('input[name="playerChoice"]:checked').value;
+            let suitSelected = document.querySelector('input[name="suitChoice"]:checked').value;
+            let rankSelected = document.querySelector('input[name="rankChoice"]:checked').value;
+
+            const payload = {
+                "method": "requestCard",
+                "requesterID": clientId,
+                "requesteeName": requesteeName,
+                "gameId": gameId,
+                "suit": suitSelected,
+                "rank": rankSelected
+            }
             ws.send(JSON.stringify(payload));
         })
 
@@ -162,8 +213,49 @@
                     if (c.clientId === clientId) playerName = c.name;
                 })
 
-                // Clear then draw initial board, if game is playing
+                // Clear then draw game options
                 if (game.playing) {
+                    gameStarted = true;
+                    // Fill out game move action form with clients, ranks, suits
+                    for (clientIdx = 0; clientIdx < game.clients.length; ++clientIdx) {
+                        let client = game.clients[clientIdx];
+                        // TODO remove partner etc
+                        if (!(client.clientId === clientId)) {
+                            const opt = document.createElement("input");
+                            opt.type = "radio";
+                            opt.value = client.name;
+                            opt.name = "playerChoice"
+                            const text = document.createTextNode(client.name);
+                            const linebreak = document.createElement("br");
+                            playerChoiceDiv.appendChild(opt);
+                            playerChoiceDiv.appendChild(text);
+                            playerChoiceDiv.appendChild(linebreak);
+                        }
+                    }
+                    for (suit of SUITS) {
+                        const opt = document.createElement("input");
+                        opt.type = "radio";
+                        opt.value = suit;
+                        opt.name = "suitChoice"
+                        const text = document.createTextNode(suit);
+                        const linebreak = document.createElement("br");
+                        suitChoiceDiv.appendChild(opt);
+                        suitChoiceDiv.appendChild(text);
+                        suitChoiceDiv.appendChild(linebreak);
+                    }
+                    for (rank of RANKS) {
+                        const opt = document.createElement("input");
+                        opt.type = "radio";
+                        opt.value = rank;
+                        opt.name = "rankChoice"
+                        const text = document.createTextNode(rank);
+                        const linebreak = document.createElement("br");
+                        rankChoiceDiv.appendChild(opt);
+                        rankChoiceDiv.appendChild(text);
+                        rankChoiceDiv.appendChild(linebreak);
+                    }
+
+                    // Board for square game 
                     while(boardDiv.firstChild)
                     boardDiv.removeChild (boardDiv.firstChild)
                     for (let i = 0; i < game.balls; i++){

@@ -128,10 +128,12 @@ wsServer.on("request", request => {
 
         // A user requests another player for a card TODO 
         if (result.method === "requestCard") {
-            console.log("PLAYING A MOVE SCORE CHANGE");
+            console.log(result.requesteeName+result.suit+result.rank);
+
             const gameId = result.gameId;
             const requesterID = result.requesterID;
             const requesteeName = result.requesteeName;
+
             if (!(requesteeName === undefined) && requesterID in clients) {
                 // Find requestee and requester client objects
                 let requesterDict = undefined;
@@ -151,7 +153,7 @@ wsServer.on("request", request => {
                 // TODO player's hands are influenced
                 if (!(requesterDict === undefined) && !(requesteeDict === undefined))
                 {
-                    let fishText = requesterDict.name + " made a move on " + requesteeDict.name;
+                    let fishText = requesterDict.name + " requested " + result.suit + result.rank + " from " + requesteeDict.name;
                     const payload = {
                         "method": "fishTextUpdate",
                         "fishText": fishText
