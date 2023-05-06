@@ -102,7 +102,7 @@ class Player {
 
         // Since they asked for the card, add all cards in that set to 
         // the 'maybe'list
-        for (c of makeNewDeck()){
+        for (c of makeNewDeck()) {
             if (c.isInSameSetAs(card)) this.maybeCards.add(c)
         }
 
@@ -127,6 +127,38 @@ class Player {
         } else {
             return false
         }
+    }
+
+    declareSet(card, players) {
+
+        let goodDeclaration = true
+        // Go through all cards in deck
+        for (c of makeNewDeck()) {
+            if (c.isInSameSetAs(card)) {
+                if (self.hand.includes(c)) {
+                    self.hand.remove(c)
+                } else if (self.partner.hand.includes(c)) {
+                    self.partner.hand.remove(c)
+                } else {
+                    goodDeclaration = false
+                }
+        }
+        print("%s declares the set with the %s, " % (self.name, card.getName()), end = "")
+
+        if (goodDeclaration) {
+            self.points += 1
+            print("and they are successful.")
+            return
+        }
+        print("but they are unsuccessful.")
+
+        for (c of makeNewDeck()) {
+            if (c.isInSameSetAs(card)) {
+                for (player of players) player.hand.discard(c)
+            }   
+        }
+        return
+    }
             
 
     // function declareSet(this, card: Card):
