@@ -1,0 +1,4 @@
+Input
+------
+getCardInput() -> Card // Returns card that player is asking for
+getTargetInput() -> Player // Returns who the player is talking to 
