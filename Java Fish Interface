@@ -2,3 +2,8 @@ Input
 ------
 getCardInput() -> Card // Returns card that player is asking for
 getTargetInput() -> Player // Returns who the player is talking to 
+
+
+Output
+------
+printStatus() // Updates status of players' hands, whose turn it is, etc.
