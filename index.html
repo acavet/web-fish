@@ -11,9 +11,13 @@
     <button id = 'joinGameBtn'>Join Game</button>
     <h2>Current game id is:</h2>
     <h2 id="gameIdTxt"></h2>
+    <h2 id="gameIdTxt"></h2>
     <h2>Current client id is:</h2>
     <h2 id="clientIdTxt">NONE</h2>
     <input type = 'text' id = 'joinGameIdTxt'>
+    <input type = 'text' id = 'joinGameNameTxt'>
+    <h2>Score is</h2>
+    <h2 id="scoreTracker"></h2>
     <div id  = 'playersListDiv'></div>
     <div id  = 'boardDiv'></div>
 
@@ -29,10 +33,12 @@
         const generateGameBtn = document.getElementById("generateGameBtn");
         const joinGameBtn = document.getElementById("joinGameBtn");
         const joinGameIdTxt = document.getElementById("joinGameIdTxt");
+        const joinGameNameTxt = document.getElementById("joinGameNameTxt");
         const gameIdTxt = document.getElementById("gameIdTxt");
         const clientIdTxt = document.getElementById("clientIdTxt");
         const divPlayers = document.getElementById("playersListDiv");
         const boardDiv = document.getElementById("boardDiv");
+        const scoreTracker = document.getElementById("scoreTracker");
 
         // Creating new game logic 
         generateGameBtn.addEventListener("click", e => {
@@ -46,12 +52,17 @@
         // Joining game logic 
         joinGameBtn.addEventListener("click", e => {
             // If not already in a game, read text in from box
-            if (gameId === null) gameId = joinGameIdTxt.value;
+            if (gameId === null) {
+                gameId = joinGameIdTxt.value;
+                name = joinGameNameTxt.value;
+            }
             const payload = {
                 "method": "join",
                 "clientId": clientId,
+                "name": name,
                 "gameId": gameId
             }
+            // TODO issue of duplicate names?
             ws.send(JSON.stringify(payload));
         })
 
@@ -86,11 +97,16 @@
                 if (!response.game.state) return;
                 for(const b of Object.keys(response.game.state))
                 {
-                    // const color = response.game.state[b];
                     const name = response.game.state[b];
                     const ballObject = document.getElementById("ball" + b);
                     ballObject.textContent = name;
                 }
+                // Update client scores 
+                response.game.clients.forEach (c => {
+                    // Set this player's name
+                    if (c.clientId === clientId) scoreTracker.textContent = c.score;
+                })
+                
 
             }
 
@@ -125,7 +141,7 @@
                     b.style.height = "150px"
                     // Event listener to signal when one player clicks a square
                     b.addEventListener("click", e => {
-                        // b.style.background = playerColor
+                        let lastPlayer = b.textContent;
                         b.textContent = playerName;
                         const payload = {
                             "method": "play",
@@ -135,6 +151,13 @@
                             "name": playerName
                         }
                         ws.send(JSON.stringify(payload))
+                        const payload2 = {
+                            "method": "requestCard",
+                            "requesterID": clientId,
+                            "requesteeName": lastPlayer,
+                            "gameId": gameId
+                        }
+                        ws.send(JSON.stringify(payload2))
                     })
                     boardDiv.appendChild(b);
                 }

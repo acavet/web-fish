@@ -17,8 +17,10 @@ const clients = {};
 const games = {};
 
 // Global variables
-const MAX_PLAYERS = 3;
+const MAX_PLAYERS = 2;
 const GAME_NAMES = ["Horse", "Pig", "Dog", "Cat", "Parrot", "Iguana"];
+// TODO later this should not be constnat 
+const NAME_LIST = ["Amy", "Huit", "Shruti", "Will"];
 
 // Server
 const wsServer = new websocketServer({
@@ -74,10 +76,11 @@ wsServer.on("request", request => {
 
             // Assign name based on # player to enter game
             // TODO players can choose names?
-            const name =  {"0": "Amy", "1": "Huit", "2": "Shruti", "3": "Will"}[game.clients.length]
+            const name =  NAME_LIST[game.clients.length]
             game.clients.push({
                 "clientId": clientId,
-                "name": name
+                "name": name,
+                "score": 5
             })
             // Start the game once we reach 4 players
             // TODO make it so we don't need max players
@@ -106,12 +109,32 @@ wsServer.on("request", request => {
             games[gameId].state = state;
         }
 
+        // A user requests another player for a card TODO 
+        if (result.method === "requestCard") {
+            const gameId = result.gameId;
+            const requesterID = result.requesterID;
+            const requesteeName = result.requesteeName;
+            if (!(requesteeName === undefined) && requesterID in clients) {
+                // TODO check valid request given their hand
+                // TODO check if player neeeds to return
+                // TODO player's hands are influenced
+                console.log("requestee name is "+requesteeName)
+                console.log(games[gameId].clients);
+                for (var i = 0; i < games[gameId].clients.length; ++i) {
+                    let clientDict = games[gameId].clients[i];
+                    if (clientDict.name === requesteeName) {
+                        clientDict.score -= 1;
+                    }
+                }
+            } 
+        }
+
     })
 
-    // Generate a new clientId and send back to client in JSON payload
+    // Upon connection to server, generate a new clientId and send back to client in JSON payload
     const clientId = guid();
     clients[clientId] = {
-        "connection":  connection
+        "connection":  connection,
     }
     const payload = {
         "method": "connect",
