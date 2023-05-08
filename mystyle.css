@@ -1,8 +1,38 @@
 body {
     background-color: lightblue;
-  }
+    font-family: Luminari, fantasy;
+    font-size: 16px;
+    margin-left: 20px;
+}
   
-  h1 {
+h1 {
     color: navy;
     margin-left: 20px;
+    text-align: center;
+}
+
+button {
+    background-color: white; /* Green */
+    border: none;
+    border-radius: 5px;
+    color: navy;
+    margin: 8px 0;
+    padding: 10px 10px;
+    text-align: center;
+    font-family: Luminari, fantasy;
+    font-size: 16px;
+    display: inline-block;
+}
+
+input {
+    background-color: white; /* Green */
+    border: none;
+    border-radius: 5px;
+    color: navy;
+    margin: 2px 0;
+    padding: 10px 10px;
+    text-align: center;
+    font-family: Luminari, fantasy;
+    font-size: 16px;
+    display: inline-block;
 }
