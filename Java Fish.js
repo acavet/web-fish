@@ -54,7 +54,7 @@ function shuffle(array) {
     }
   
     return array;
-  }
+}
 
 function makeNewDeck() {
     let deck = []
@@ -189,7 +189,6 @@ class Player {
     }
 }
 
-
 function getCardInput() {
     rank = 2 + Math.floor(13*Math.random())
     suit = Math.floor(4*Math.random())
@@ -210,8 +209,8 @@ function doTurn(currentPlayer, players) {
     if (currentPlayer.isComputer) {
         target = currentPlayer.getComputerTarget(players)
         card = currentPlayer.getComputerCard(target)
-
         // tryComputerDeclare(currentPlayer, players)
+
     } else {
         target = getTargetInput(players)
         card = getCardInput()
@@ -235,7 +234,6 @@ function doTurn(currentPlayer, players) {
         // print("You can't ask for that card!")
         return currentPlayer
     }
-       
 }
 
 function gameIsOver(players) {
@@ -279,6 +277,7 @@ function printStatus(currentPlayer, players) {
 
     for (const player of players) {
         let sortedHand = Array.from(player.hand)
+
         sortedHand.sort( function(a, b) {
             if (a.suit == b.suit) return a.rank - b.rank
             else return a.suit - b.suit;
