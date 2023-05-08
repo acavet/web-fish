@@ -110,6 +110,8 @@
                 "name": name,
                 "gameId": gameId
             }
+            // Set this player's name
+            playerName = name;
             // TODO issue of duplicate names?
             ws.send(JSON.stringify(payload));
         })
@@ -205,14 +207,12 @@
                     divPlayers.removeChild (divPlayers.firstChild)
 
                 // Redo player list
-                game.clients.forEach (c => {
+                game.players.forEach (pname => {
                     const d = document.createElement("div");
                     d.style.width = "200px";
                     // d.style.background = c.name;
-                    d.textContent = c.name;
+                    d.textContent = pname;
                     divPlayers.appendChild(d);
-                    // Set this player's name
-                    if (c.clientId === clientId) playerName = c.name;
                 })
 
                 // Clear then draw game options
