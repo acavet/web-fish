@@ -75,7 +75,8 @@ wsServer.on("request", request => {
                 "players": [],
                 "playing": false,
                 "message": "",
-                "deck": undefined
+                "deck": undefined,
+                "turn": ""
             }
 
             // Data to return back to game HTML
@@ -131,12 +132,13 @@ wsServer.on("request", request => {
                 }
                 var aiBools = [];
                 for (i = 0; i < TOTAL_PLAYERS; i++) {
-                    var b = false;
+                    var b = true;
                     if (i < numberNotAi) {
-                        var b = true;
+                        var b = false;
                     } 
                     aiBools.push(b);
                 }
+                console.log("AI bools" + aiBools)
                 game.players = jf.setUpPlayers(names, aiBools);
 
                 // Signal start of game and start updating game state
@@ -179,46 +181,11 @@ wsServer.on("request", request => {
             const requesterName = result.requesterName;
             const requesteeName = result.requesteeName;
 
-            // // Find requestee and requester client objects, if they exist
-            // let requesterDict = undefined;
-            // let requesteeDict = undefined;
-            // for (var i = 0; i < games[gameId].clients.length; ++i) {
-            //     let clientDict = games[gameId].clients[i];
-            //     if (clientDict.name === requesteeName) {
-            //         clientDict.score -= 1;
-            //         requesteeDict = clientDict;
-            //     }
-            //     if (clientDict.name === requesterName) {
-            //         requesterDict = clientDict;
-            //     }
-            // }
-            // // TODO check valid request given their hand
-            // // TODO check if player neeeds to return
-            // // TODO player's hands are influenced
-
-        
-            // if (!(requesterDict === undefined) && !(requesteeDict === undefined))
-            // {
-            //     let fishText = requesterDict.name + " requested " + result.suit + result.rank + " from " + requesteeDict.name;
-            //     // TODO do card move
-            //     console.log(fishText)
-            //     const payload = {
-            //         "method": "fishTextUpdate",
-            //         "fishText": fishText
-            //     };
-            //     games[gameId].clients.forEach(c => {
-            //         clients[c.clientId].connection.send(JSON.stringify(payload))
-            //     });
-            // } else {
-            //     console.log("ISSUES FINDING REQUESTING PLAYERS?")
-            // }
-
-
-
-
             let requesterPlayer = undefined;
             let requesteePlayer = undefined;
+            let requestedCard = undefined;
 
+            // Find players
             for (player of games[gameId].players) {
                 if (player.name === requesteeName) {
                     requesteePlayer = player;
@@ -227,27 +194,63 @@ wsServer.on("request", request => {
                     requesterPlayer = player;
                 }
             }
-            if (!(requesterPlayer === undefined) && !(requesteePlayer === undefined))
-            {
-                let fishText = requesterName + " requested " + result.suit + result.rank + " from " + requesteeName;
 
 
-            
-                console.log(fishText)
+            console.log("requester is " + requesterName)
+            // Case on if the requester is an AI
+            if (requesterPlayer.isComputer) {
+                console.log("requester is AI")
+                
+                requesteePlayer = requesterPlayer.getComputerTarget(games[gameId].players);
+                requestedCard = requesterPlayer.getComputerCard(requesteePlayer);
+            } else { // If not a computer 
+                console.log("requester NOT AI")
+                requestedCard = new jf.Card(result.rank, result.suit);    
+            } 
 
-                // requesterPlayer.askForCard(requesteePlayer, )
+            console.log(requestedCard)
+            console.log(requestedCard.symbol)
 
+            // Ask for card
+            let goodAsk = requesterPlayer.askForCard(requesteePlayer, requestedCard, games[gameId].players);
 
-                const payload = {
-                    "method": "fishTextUpdate",
-                    "fishText": fishText
-                };
-                games[gameId].clients.forEach(c => {
-                    clients[c.clientId].connection.send(JSON.stringify(payload))
-                });
+            // Figure out next player
+            let nextPlayer = undefined;
+            if (goodAsk) {
+                nextPlayer = requesterPlayer;
             } else {
-                console.log("ISSUES FINDING REQUESTING PLAYERS?")
+                nextPlayer = requesteePlayer;
             }
+
+            // Update players on what turn happened
+            let requestText = requesterName + " requested " + requestedCard.symbol + " from " + requesteeName;
+            let successText = " and was " + (goodAsk ? " " : "not ") + "successful, so the next player is " + nextPlayer.name;
+
+            let fishText = requestText + successText
+            console.log(fishText)
+            const payload3 = {
+                "method": "fishTextUpdate",
+                "fishText": fishText
+            };
+            games[gameId].clients.forEach(c => {
+                clients[c.clientId].connection.send(JSON.stringify(payload3))
+            });
+
+
+            // Change turns
+            let nextName = nextPlayer.name;
+            games[gameId].turn = nextName;
+            // TODO
+            const payload = {
+                "method": "alert",
+                "message": "It is " + nextName + "'s turn to make a move.",
+            }
+            connection.send(JSON.stringify(payload));
+            const payload2 = {
+                "method": "alertTurn",
+                "name": nextName
+            }            
+            connection.send(JSON.stringify(payload2));
             
             
         }
