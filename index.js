@@ -25,6 +25,7 @@ const games = {};
 
 // Global variables
 const MAX_PLAYERS = 1;
+const TOTAL_PLAYERS = 4;
 const GAME_NAMES = ["Horse", "Pig", "Dog", "Cat", "Parrot", "Iguana"];// TODO 
 
 // Helper function to avoid player circles
@@ -123,11 +124,20 @@ wsServer.on("request", request => {
                 // Get irl player names
                 let names = game.clients.map(function (client) { return client.name });
 
-                // Add comedian names TODO jank temp logica 
+                // Add comedian names TODO jank temp logic
+                const numberNotAi = names.length;
                 while (names.length < 4) {
                     names.push("amyNumber"+names.length);
                 }
-                game.players = jf.setUpPlayers(names, [false, true, true, true]);
+                var aiBools = [];
+                for (i = 0; i < TOTAL_PLAYERS; i++) {
+                    var b = false;
+                    if (i < numberNotAi) {
+                        var b = true;
+                    } 
+                    aiBools.push(b);
+                }
+                game.players = jf.setUpPlayers(names, aiBools);
 
                 // Signal start of game and start updating game state
                 const payload = {
