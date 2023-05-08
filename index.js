@@ -121,7 +121,7 @@ wsServer.on("request", request => {
                 // Start game
                 game.playing = true;
 
-                // Get irl player names
+                // Get irl player names here
                 let names = game.clients.map(function (client) { return client.name });
 
                 // Add comedian names TODO jank temp logic
