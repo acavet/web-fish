@@ -91,18 +91,14 @@ class Player {
 
         if (!this.canAskForCard(card)) return null
 
-        // Since they asked for the card, add all cards of that set to 
-        // the 'maybe'list
         for (const c of makeNewDeck()) {
             if (c.isInSameSetAs(card)) this.maybeCards.add(c)
         }
-
-        // Either the target doesn't have the card, or they'll give it away
-        target.knownCards.delete(card)
-        target.maybeCards.delete(card)
+   
         this.maybeCards.delete(card)
         
         if (target.hand.has(card)) {
+
             target.hand.remove(card)
             this.hand.add(card)
 
@@ -117,6 +113,8 @@ class Player {
 
             return true
         } else {
+            target.knownCards.delete(card)
+            target.maybeCards.delete(card)
             return false
         }
     }
@@ -281,29 +279,31 @@ function dealCards(players) {
 function printStatus(currentPlayer, players) { 
     console.log("Your hand:")
 
-    let sortedHand = Array.from(players[0].hand)
-    sortedHand.sort( function(a, b) {
-        if (a.suit == b.suit) return a.rank - b.rank
-        else return a.suit - b.suit;
-    });
+    for (const player of players) {
+        let sortedHand = Array.from(player.hand)
+        sortedHand.sort( function(a, b) {
+            if (a.suit == b.suit) return a.rank - b.rank
+            else return a.suit - b.suit;
+        });
 
-    for (let i = 0; i < sortedHand.length; i++) {
+        for (let i = 0; i < sortedHand.length; i++) {
 
-        process.stdout.write(sortedHand[i].symbol)
+            process.stdout.write(sortedHand[i].symbol)
 
-        if (i < sortedHand.length -1 && sortedHand[i+1].suit != sortedHand[i].suit) {
-            console.log()
-        } else if (i == sortedHand.length - 1) {
-            console.log()
-            console.log()
-        } else {
-            process.stdout.write(", ")
+            if (i < sortedHand.length -1 && sortedHand[i+1].suit != sortedHand[i].suit) {
+                console.log()
+            } else if (i == sortedHand.length - 1) {
+                console.log()
+                console.log()
+            } else {
+                process.stdout.write(", ")
+            }
         }
     }
-        
-    for (let i = 1; i < 4; i++) {
-        console.log(players[i].name, "has", players[i].hand.size, "cards")
-    }
+
+    // for (let i = 1; i < 4; i++) {
+    //     console.log(players[i].name, "has", players[i].hand.size, "cards")
+    // }
 
     console.log()
     console.log("Up next:", currentPlayer.name)
@@ -323,8 +323,7 @@ function runGame() {
     let currentPlayer = players[0]
 
     // while (!gameIsOver(players)) {
-
-    for (_ = 0; _ < 5; _ ++) {
+    for (_ = 0; _ < 10; _ ++) {
         console.log("---------------")
 
         printStatus(currentPlayer, players)
