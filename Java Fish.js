@@ -254,7 +254,7 @@ function setUpPlayers(nameList, isComputerList) {
     let players = [player1, player2, player3, player4]
 
     for (let i in players) {
-        players[i].parnter = players[(i+2) % 4]
+        players[i].partner = players[(i+2) % 4]
         players[i].isComputer = isComputerList[i]
     }
 
@@ -334,7 +334,7 @@ function runGame() {
 
 }
 
-runGame()
+// runGame()
 
 
 module.exports = {

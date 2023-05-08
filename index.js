@@ -22,8 +22,29 @@ const players = {};
 const games = {};
 
 // Global variables
-const MAX_PLAYERS = 2;
+const MAX_PLAYERS = 1;
 const GAME_NAMES = ["Horse", "Pig", "Dog", "Cat", "Parrot", "Iguana"];// TODO 
+
+// Helper function to avoid player circles
+const replacerFunc = () => {
+    const visited = new WeakSet();
+    return (key, value) => {
+        // if (key === undefined || value === undefined) {
+        //     return "";
+        //   }
+      if (value instanceof jf.Player) {
+        console.log("player" + value.name)
+        return value.name;
+      }
+    //   if (typeof value === "object" && value !== null) {
+    //     if (visited.has(value)) {
+    //       return ;
+    //     }
+    //     visited.add(value);
+    //   }
+      return value;
+    };
+  };
 
 // Server
 const wsServer = new websocketServer({
@@ -43,7 +64,6 @@ wsServer.on("request", request => {
         if (result.method === "create") {
             const clientId = result.clientId;
             const gameId = guid();
-            let deck = jf.makeNewDeck();
 
             // Add game id and metadata to game dictionaty
             games[gameId] = {
@@ -53,7 +73,7 @@ wsServer.on("request", request => {
                 "players": [],
                 "playing": false,
                 "message": "",
-                "deck": deck
+                "deck": undefined
             }
 
             // Data to return back to game HTML
@@ -87,27 +107,28 @@ wsServer.on("request", request => {
                 connection.send(JSON.stringify(payload));
                 return;
             }
-
-            // Make player, assign parter
-            let player = new jf.Player(name);
-            if (game.players.length % 2 === 1) {
-                var lastPlayer = game.players[game.players.length - 1];
-                lastPlayer.partner = player;
-                player.partner = lastPlayer;
-                console.log("Partered " + name + " with " + lastPlayer.name);
-            }
-
-            game.players.push(player);
     
             game.clients.push({
                 "clientId": clientId,
                 "name": name,
                 "score": 5
             })
-            // Start the game once we reach 4 players
+            // Start the game once we reach XXX players
             // TODO make it so we don't need max players
             if (game.clients.length === MAX_PLAYERS) {
+                // Start game
                 game.playing = true;
+
+                // Get irl player names
+                let names = game.clients.map(function (client) { return client.name });
+
+                // Add comedian names TODO jank temp logica 
+                while (names.length < 4) {
+                    names.push("amyNumber"+names.length);
+                }
+                game.players = jf.setUpPlayers(names, [false, true, true, true]);
+
+                // Signal start of game and start updating game state
                 const payload = {
                     "method": "alert",
                     "message": "The game has started."
@@ -122,7 +143,7 @@ wsServer.on("request", request => {
                 "game": game
             }
             game.clients.forEach(c => {
-                clients[c.clientId].connection.send(JSON.stringify(payload))
+                clients[c.clientId].connection.send(JSON.stringify(payload, replacerFunc()))
             })
         }
 
@@ -170,10 +191,10 @@ wsServer.on("request", request => {
                     const payload = {
                         "method": "fishTextUpdate",
                         "fishText": fishText
-                    }
+                    };
                     games[gameId].clients.forEach(c => {
                         clients[c.clientId].connection.send(JSON.stringify(payload))
-                    })
+                    });
                 }
             } 
         }
@@ -184,12 +205,12 @@ wsServer.on("request", request => {
     const clientId = guid();
     clients[clientId] = {
         "connection":  connection,
-    }
+    };
     const payload = {
         "method": "connect",
         "clientId": clientId
-    }
-    connection.send(JSON.stringify(payload))
+    };
+    connection.send(JSON.stringify(payload));
 })
 
 
@@ -199,22 +220,34 @@ function updateGameState(){
 
     // Loop through each game
     for (const g of Object.keys(games)) {
-        const game = games[g]
+        const game = games[g];
         const payload = {
             "method": "update",
             "game": game
-        }
+        };
         // Exclude circular player objects from game in JSON
-        let payloadJSON = JSON.stringify(payload, function replacer(key, value) {
-            console.log(typeof(value));
-            if (typeof(value) === "object")
-              return value.name;
-            return value;
-        });
+        
+        function replacer2(key, value) {
+            if (key === "players" || value === "players") {
+                return "";
+            }
+        }
+        // let payloadJSON = JSON.stringify(payload, function replacer(key, value) {
+        //     console.log(key);
+        //     if (key == "players") {
+        //         console.log("fising");
+        //         return "NOOOOO";
+        //     }
+                
+        //     return value;
+        // });
+        const payloadJSON = JSON.stringify(payload, replacerFunc());
+        console.log("JSON" + payloadJSON);
+        // let payloadJSON = JSON.stringify(payload);
         // Send game updates in JSON payload to each client 
         game.clients.forEach(c => {
-            clients[c.clientId].connection.send(payloadJSON)
-        })
+            clients[c.clientId].connection.send(payloadJSON);
+        });
     }
 
     // Time between game updates
