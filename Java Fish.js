@@ -1,13 +1,13 @@
 class Card {
 
-    ranks = ["", "", "two", "three", "four", "five", "six", "seven", 
+    static ranks = ["", "", "two", "three", "four", "five", "six", "seven", 
     "eight", "nine", "ten", "jack", "queen", "king", "ace"]
 
-    rankSymbols = ["", "", "2", "3", "4", "5", "6", "7", "8", "9",
+    static rankSymbols = ["", "", "2", "3", "4", "5", "6", "7", "8", "9",
     "10", "J", "Q", "K", "A"]
 
-    suits = ["spades", "diamonds", "hearts", "clubs"]
-    suitSymbols = ["♠️", "♦️", "♥️", "♣️"]
+    static suits = ["spades", "diamonds", "hearts", "clubs"]
+    static suitSymbols = ["♠️", "♦️", "♥️", "♣️"]
 
     constructor(rank, suit) {
         this.rank = rank
@@ -15,8 +15,9 @@ class Card {
     }
 
     get symbol() {
-        let rankString = this.rankSymbols[this.rank]
-        let suitString = this.suitSymbols[this.suit]
+        console.log(Card.rankSymbols)
+        const rankString = Card.rankSymbols[this.rank]
+        const suitString = Card.suitSymbols[this.suit]
 
         return rankString + suitString
     }

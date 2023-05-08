@@ -205,7 +205,10 @@ wsServer.on("request", request => {
                 requestedCard = requesterPlayer.getComputerCard(requesteePlayer);
             } else { // If not a computer 
                 console.log("requester NOT AI")
-                requestedCard = new jf.Card(result.rank, result.suit);    
+                const rankNum = jf.Card.ranks.indexOf(result.rank);
+                const suitNum = jf.Card.suits.indexOf(result.suit);
+                console.log(rankNum, suitNum)
+                requestedCard = new jf.Card(rankNum, suitNum);    
             } 
 
             console.log(requestedCard)
