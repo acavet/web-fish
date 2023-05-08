@@ -127,9 +127,11 @@
             let suitSelected = document.querySelector('input[name="suitChoice"]:checked').value;
             let rankSelected = document.querySelector('input[name="rankChoice"]:checked').value;
 
+            console.log("making a move??");
+
             const payload = {
                 "method": "requestCard",
-                "requesterID": clientId,
+                "requesterName": name,
                 "requesteeName": requesteeName,
                 "gameId": gameId,
                 "suit": suitSelected,
