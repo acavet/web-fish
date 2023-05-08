@@ -9,6 +9,7 @@ h1 {
     color: navy;
     margin-left: 20px;
     text-align: center;
+    font-size: 40px;
 }
 
 button {
@@ -22,6 +23,13 @@ button {
     font-family: Luminari, fantasy;
     font-size: 16px;
     display: inline-block;
+    transition-duration: 0.2s;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: navy; /* Green */
+    color: white;
 }
 
 input {
@@ -30,9 +38,10 @@ input {
     border-radius: 5px;
     color: navy;
     margin: 2px 0;
-    padding: 10px 10px;
-    text-align: center;
+    padding: 10px 20px;
+    text-align: left;
     font-family: Luminari, fantasy;
     font-size: 16px;
     display: inline-block;
 }
+
