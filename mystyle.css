@@ -2,7 +2,12 @@ body {
     background-color: lightblue;
     font-family: Luminari, fantasy;
     font-size: 16px;
-    margin-left: 20px;
+    margin-left: 50px;
+}
+
+::selection {
+    color: black;
+    background: white;
 }
   
 h1 {
@@ -32,13 +37,18 @@ button:hover {
     color: white;
 }
 
+.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 input {
     background-color: white; /* Green */
     border: none;
     border-radius: 5px;
     color: navy;
     margin: 2px 0;
-    padding: 10px 20px;
+    padding: 10px 10px;
     text-align: left;
     font-family: Luminari, fantasy;
     font-size: 16px;
