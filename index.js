@@ -1,5 +1,7 @@
 // TODO add documentation
 
+const jf = require('./Java Fish.js');
+
 // Web socket setup
 const http = require("http");
 const { client } = require("websocket");
@@ -41,14 +43,17 @@ wsServer.on("request", request => {
         if (result.method === "create") {
             const clientId = result.clientId;
             const gameId = guid();
+            let deck = jf.makeNewDeck();
 
             // Add game id and metadata to game dictionaty
             games[gameId] = {
                 "id": gameId,
                 "balls": 20,
                 "clients": [],
+                "players": [],
                 "playing": false,
-                "message": ""
+                "message": "",
+                "deck": deck
             }
 
             // Data to return back to game HTML
@@ -71,6 +76,7 @@ wsServer.on("request", request => {
             // TODO check if game id is valid
             // TODO custom game ids 
 
+
             // Have we reached the max number of players?
             if (game.clients.length >= MAX_PLAYERS) 
             {
@@ -82,9 +88,17 @@ wsServer.on("request", request => {
                 return;
             }
 
-            // Assign name based on # player to enter game
+            // Make player, assign parter
+            let player = new jf.Player(name);
+            if (game.players.length % 2 === 1) {
+                var lastPlayer = game.players[game.players.length - 1];
+                lastPlayer.partner = player;
+                player.partner = lastPlayer;
+                console.log("Partered " + name + " with " + lastPlayer.name);
+            }
+
+            game.players.push(player);
     
-            // const name =  NAME_LIST[game.clients.length]
             game.clients.push({
                 "clientId": clientId,
                 "name": name,
@@ -128,7 +142,6 @@ wsServer.on("request", request => {
 
         // A user requests another player for a card TODO 
         if (result.method === "requestCard") {
-            console.log(result.requesteeName+result.suit+result.rank);
 
             const gameId = result.gameId;
             const requesterID = result.requesterID;
@@ -191,9 +204,16 @@ function updateGameState(){
             "method": "update",
             "game": game
         }
+        // Exclude circular player objects from game in JSON
+        let payloadJSON = JSON.stringify(payload, function replacer(key, value) {
+            console.log(typeof(value));
+            if (typeof(value) === "object")
+              return value.name;
+            return value;
+        });
         // Send game updates in JSON payload to each client 
         game.clients.forEach(c => {
-            clients[c.clientId].connection.send(JSON.stringify(payload))
+            clients[c.clientId].connection.send(payloadJSON)
         })
     }
 

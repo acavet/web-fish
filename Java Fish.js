@@ -310,6 +310,10 @@ function printStatus(currentPlayer, players) {
 
 }
 
+function test() {
+    console.log("Test successful");
+}
+
 function runGame() {
 
     let players = setUpPlayers("Huit", "Conan", "Ana", "Hasan")
@@ -334,4 +338,21 @@ function runGame() {
 
 }
 
-runGame()
+// runGame()
+
+
+module.exports = {
+    Card,
+    shuffle,
+    makeNewDeck,
+    Player,
+    getCardInput,
+    getTargetInput,
+    getComputerCard,
+    doTurn,
+    gameIsOver,
+    setUpPlayers,
+    dealCards,
+    printStatus,
+    test
+}
