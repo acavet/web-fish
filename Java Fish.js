@@ -70,7 +70,7 @@ function makeNewDeck() {
     
 class Player {
     points = 0;
-    isCurrentPlayer;
+    isComputer;
 
     constructor(name) {
         this.name = name
@@ -209,20 +209,19 @@ function doTurn(currentPlayer, players) {
     let target = null
     let card = null
 
-    if (currentPlayer == players[0]) {
+    if (currentPlayer.isComputer) {
         target = getComputerTarget(currentPlayer, players)
         card = getComputerCard(currentPlayer, target)
 
+        // tryComputerDeclare(currentPlayer, players)
+    } else {
+        target = getTargetInput(players)
+        card = getCardInput()
+    
         if (target == null) {
             currentPlayer.declareSet(card, players)
             return currentPlayer
         }
-
-    } else {
-        target = getComputerTarget(currentPlayer, players)
-        card = getComputerCard(currentPlayer, target)
-    
-        // tryComputerDeclare(currentPlayer, players)
     }
 
     console.log(`${currentPlayer.name}: ${target.name}, do you have the ${card.symbol}?`)
@@ -250,18 +249,20 @@ function gameIsOver(players) {
     return true
 }
 
-function setUpPlayers(name1, name2, name3, name4) {
-    let player1 = new Player(name1)
-    let player2 = new Player(name2)
-    let player3 = new Player(name3)
-    let player4 = new Player(name4)
+function setUpPlayers(nameList, isComputerList) {
+    let player1 = new Player(nameList[0])
+    let player2 = new Player(nameList[1])
+    let player3 = new Player(nameList[2])
+    let player4 = new Player(nameList[3])
 
-    player1.partner = player3
-    player2.partner = player4
-    player3.partner = player1
-    player4.partner = player2
+    let players = [player1, player2, player3, player4]
 
-    return [player1, player2, player3, player4]
+    for (let i in players) {
+        players[i].parnter = players[(i+2) % 4]
+        players[i].isComputer = isComputerList[i]
+    }
+
+    return players
 }
 
 function dealCards(players) {
@@ -316,7 +317,7 @@ function test() {
 
 function runGame() {
 
-    let players = setUpPlayers("Huit", "Conan", "Ana", "Hasan")
+    let players = setUpPlayers(["Huit", "Conan", "Ana", "Hasan"], [true, true, true, true])
     dealCards(players)
 
     console.log(players[0].hand.size)
