@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel= "stylesheet" href="./mystyle.css">
+    <link rel="stylesheet" type="css" href="./mystyle.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
@@ -218,15 +218,14 @@
                 if (game.playing) {
                     gameStarted = true;
                     // Fill out game move action form with clients, ranks, suits
-                    for (clientIdx = 0; clientIdx < game.clients.length; ++clientIdx) {
-                        let client = game.clients[clientIdx];
+                    for (gamePlayer of game.players) {
                         // TODO remove partner etc
-                        if (!(client.clientId === clientId)) {
+                        if (!(gamePlayer === playerName)) {
                             const opt = document.createElement("input");
                             opt.type = "radio";
-                            opt.value = client.name;
+                            opt.value = gamePlayer;
                             opt.name = "playerChoice"
-                            const text = document.createTextNode(client.name);
+                            const text = document.createTextNode(gamePlayer);
                             const linebreak = document.createElement("br");
                             playerChoiceDiv.appendChild(opt);
                             playerChoiceDiv.appendChild(text);

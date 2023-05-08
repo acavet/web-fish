@@ -1,12 +1,15 @@
 // TODO add documentation
 
 const jf = require('./Java Fish.js');
+let express = require('express');
 
 // Web socket setup
 const http = require("http");
 const { client } = require("websocket");
 const app = require("express")();
 app.get("/", (req,res)=> res.sendFile(__dirname + "/index.html"))
+app.use(express.static(__dirname + '/public'));
+
 
 // Host on port 9090
 // Listen on port 9091, so to text go to localhost:9091
@@ -33,7 +36,6 @@ const replacerFunc = () => {
         //     return "";
         //   }
       if (value instanceof jf.Player) {
-        console.log("player" + value.name)
         return value.name;
       }
     //   if (typeof value === "object" && value !== null) {
@@ -188,6 +190,7 @@ wsServer.on("request", request => {
                 if (!(requesterDict === undefined) && !(requesteeDict === undefined))
                 {
                     let fishText = requesterDict.name + " requested " + result.suit + result.rank + " from " + requesteeDict.name;
+                    // TODO do card move
                     const payload = {
                         "method": "fishTextUpdate",
                         "fishText": fishText
@@ -225,25 +228,7 @@ function updateGameState(){
             "method": "update",
             "game": game
         };
-        // Exclude circular player objects from game in JSON
-        
-        function replacer2(key, value) {
-            if (key === "players" || value === "players") {
-                return "";
-            }
-        }
-        // let payloadJSON = JSON.stringify(payload, function replacer(key, value) {
-        //     console.log(key);
-        //     if (key == "players") {
-        //         console.log("fising");
-        //         return "NOOOOO";
-        //     }
-                
-        //     return value;
-        // });
         const payloadJSON = JSON.stringify(payload, replacerFunc());
-        console.log("JSON" + payloadJSON);
-        // let payloadJSON = JSON.stringify(payload);
         // Send game updates in JSON payload to each client 
         game.clients.forEach(c => {
             clients[c.clientId].connection.send(payloadJSON);
