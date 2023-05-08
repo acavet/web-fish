@@ -21,7 +21,7 @@ class Card {
         return rankString + suitString
     }
 
-    static isInSameSetAs(other) {
+    isInSameSetAs(other) {
         if (this.rank == 8) {
             if (other.rank == 8) return true
             else return false
@@ -41,7 +41,8 @@ class Card {
 }
 
 function shuffle(array) {
-    let currentIndex = array.length, randomIndex;
+    let currentIndex = array.length 
+    let randomIndex;
   
     while (currentIndex != 0) {
   
@@ -69,6 +70,7 @@ function makeNewDeck() {
     
 class Player {
     points = 0;
+    isCurrentPlayer;
 
     constructor(name) {
         this.name = name
@@ -78,8 +80,7 @@ class Player {
     }
 
     canAskForCard(card) {
-        
-        for (c of this.hand) {
+        for (const c of this.hand) {
             if (card.isInSameSetAs(c)) return true
         }
         return false
@@ -92,22 +93,23 @@ class Player {
 
         // Since they asked for the card, add all cards of that set to 
         // the 'maybe'list
-        for (c of makeNewDeck()) {
+        for (const c of makeNewDeck()) {
             if (c.isInSameSetAs(card)) this.maybeCards.add(c)
         }
 
         // Either the target doesn't have the card, or they'll give it away
-        target.knownCards.discard(card)
-        target.maybeCards.discard(card)
+        target.knownCards.delete(card)
+        target.maybeCards.delete(card)
+        this.maybeCards.delete(card)
         
         if (target.hand.has(card)) {
             target.hand.remove(card)
             this.hand.add(card)
 
             // Remove card from other players
-            for (player of players) {
-                player.knownCards.discard(card)
-                player.maybeCards.discard(card)
+            for (const player of players) {
+                player.knownCards.delete(card)
+                player.maybeCards.delete(card)
             }
 
             // The asking player has the card
@@ -119,10 +121,11 @@ class Player {
         }
     }
 
-    declareSet(card, players) {
+    static declareSet(card, players) {
         let goodDeclaration = true
         // Go through all cards of deck
-        for (c of makeNewDeck()) {
+
+        for (const c of makeNewDeck()) {
             if (c.isInSameSetAs(card)) {
                 if (self.hand.has(c)) {
                     self.hand.remove(c)
@@ -142,9 +145,9 @@ class Player {
         }
         // print("but they are unsuccessful.")
 
-        for (c of makeNewDeck()) {
+        for (const c of makeNewDeck()) {
             if (c.isInSameSetAs(card)) {
-                for (player of players) player.hand.discard(c)
+                for (let player of players) player.hand.delete(c)
             }   
         }
         return
@@ -166,19 +169,19 @@ function getTargetInput(players) {
 
 function getComputerCard(currentPlayer, target) {
 
-    for (targetCard of target.knownCards) {
-        for (card of currentPlayer.hand) {
+    for (const targetCard of target.knownCards) {
+        for (const card of currentPlayer.hand) {
             if (card.isInSameSetAs(targetCard)) {
                 return targetCard
             }
         }
     }
 
-    for (targetCard of target.maybeCards) {
+    for (const targetCard of target.maybeCards) {
         if (currentPlayer.hand.has(targetCard)) {
             continue
         }
-        for (card of currentPlayer.hand) {
+        for (const card of currentPlayer.hand) {
             if (card.isInSameSetAs(targetCard)) {
                 return targetCard
             }
@@ -187,7 +190,7 @@ function getComputerCard(currentPlayer, target) {
 
     deck = makeNewDeck()
     shuffle(deck)
-    for (card of deck) {
+    for (const card of deck) {
         if (!(currentPlayer.hand.has(card)) && currentPlayer.canAskForCard(card)) {
             return card
         }
@@ -195,18 +198,13 @@ function getComputerCard(currentPlayer, target) {
         
 }
 
-
 function getComputerTarget(currentPlayer, players) {
-
-    if (players[2] == currentPlayer) {
-        
-        return players[1 + Math.floor(2*  Math.random())]
+    if (currentPlayer == players[0] || currentPlayer == players[2]) {
+        return players[1 + 2 * Math.floor(2 * Math.random())]
     } else {
-        return players[2 + Math.floor(2 * Math.random())]
+        return players[2 * Math.floor(2 * Math.random())]
     }
 }
-
-
 
 function doTurn(currentPlayer, players) {
 
@@ -217,8 +215,6 @@ function doTurn(currentPlayer, players) {
         target = getComputerTarget(currentPlayer, players)
         card = getComputerCard(currentPlayer, target)
 
-        console.log()
-
         if (target == null) {
             currentPlayer.declareSet(card, players)
             return currentPlayer
@@ -228,19 +224,17 @@ function doTurn(currentPlayer, players) {
         target = getComputerTarget(currentPlayer, players)
         card = getComputerCard(currentPlayer, target)
     
-        tryComputerDeclare(currentPlayer, players)
+        // tryComputerDeclare(currentPlayer, players)
     }
 
-    console.log(card)
-
-    console.log("%s: %s, do you have the %s?" % (currentPlayer.name, target.name, card.symbol))
+    console.log(`${currentPlayer.name}: ${target.name}, do you have the ${card.symbol}?`)
     result = currentPlayer.askForCard(target, card, players)
 
     if (result == false) {
-        // print("%s: no." % target.name)
+        console.log(`${target.name}: no.`)
         return target
     } else if (result == true) {
-        // print("%s: yes." % target.name)
+        console.log(`${target.name}: yes.`)
         return currentPlayer
     } else if (result == null) {
         // print("You can't ask for that card!")
@@ -250,7 +244,7 @@ function doTurn(currentPlayer, players) {
 }
 
 function gameIsOver(players) {
-    for (player of players) {
+    for (const player of players) {
         if (player.hand.size != 0) {
             return false
         }
@@ -258,11 +252,11 @@ function gameIsOver(players) {
     return true
 }
 
-function setUpPlayers() {
-    let player1 = new Player("Huit")
-    let player2 = new Player("Conan")
-    let player3 = new Player("Ana")
-    let player4 = new Player("Hasan")
+function setUpPlayers(name1, name2, name3, name4) {
+    let player1 = new Player(name1)
+    let player2 = new Player(name2)
+    let player3 = new Player(name3)
+    let player4 = new Player(name4)
 
     player1.partner = player3
     player2.partner = player4
@@ -278,7 +272,7 @@ function dealCards(players) {
     shuffle(deck)
 
     for (let _ = 0; _ < 13; _ ++) {
-        for (player of players) {
+        for (const player of players) {
             player.hand.add(deck.pop())
         }
     }
@@ -296,6 +290,7 @@ function printStatus(currentPlayer, players) {
     for (let i = 0; i < sortedHand.length; i++) {
 
         process.stdout.write(sortedHand[i].symbol)
+
         if (i < sortedHand.length -1 && sortedHand[i+1].suit != sortedHand[i].suit) {
             console.log()
         } else if (i == sortedHand.length - 1) {
@@ -317,7 +312,7 @@ function printStatus(currentPlayer, players) {
 
 function runGame() {
 
-    let players = setUpPlayers()
+    let players = setUpPlayers("Huit", "Conan", "Ana", "Hasan")
     dealCards(players)
 
     console.log(players[0].hand.size)
