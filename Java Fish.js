@@ -150,6 +150,43 @@ class Player {
         }
         return
     }
+
+    getComputerCard(target) {
+
+        for (const targetCard of target.knownCards) {
+            for (const card of this.hand) {
+                if (card.isInSameSetAs(targetCard)) {
+                    return targetCard
+                }
+            }
+        }
+    
+        for (const targetCard of target.maybeCards) {
+            if (!this.hand.has(targetCard)) {
+                for (const card of this.hand) {
+                    if (card.isInSameSetAs(targetCard)) {
+                        return targetCard
+                    }
+                }
+            }
+        }
+    
+        const deck = makeNewDeck()
+        shuffle(deck)
+        for (const card of deck) {
+            if (!(this.hand.has(card)) && this.canAskForCard(card)) {
+                return card
+            }
+        }
+    }
+    
+    getComputerTarget(players) {
+        if (this == players[0] || this == players[2]) {
+            return players[1 + 2 * Math.floor(2 * Math.random())]
+        } else {
+            return players[2 * Math.floor(2 * Math.random())]
+        }
+    }
 }
 
 
@@ -165,53 +202,14 @@ function getTargetInput(players) {
     return players[i]
 }
 
-function getComputerCard(currentPlayer, target) {
-
-    for (const targetCard of target.knownCards) {
-        for (const card of currentPlayer.hand) {
-            if (card.isInSameSetAs(targetCard)) {
-                return targetCard
-            }
-        }
-    }
-
-    for (const targetCard of target.maybeCards) {
-        if (currentPlayer.hand.has(targetCard)) {
-            continue
-        }
-        for (const card of currentPlayer.hand) {
-            if (card.isInSameSetAs(targetCard)) {
-                return targetCard
-            }
-        }
-    }
-
-    deck = makeNewDeck()
-    shuffle(deck)
-    for (const card of deck) {
-        if (!(currentPlayer.hand.has(card)) && currentPlayer.canAskForCard(card)) {
-            return card
-        }
-    }
-        
-}
-
-function getComputerTarget(currentPlayer, players) {
-    if (currentPlayer == players[0] || currentPlayer == players[2]) {
-        return players[1 + 2 * Math.floor(2 * Math.random())]
-    } else {
-        return players[2 * Math.floor(2 * Math.random())]
-    }
-}
-
 function doTurn(currentPlayer, players) {
 
     let target = null
     let card = null
 
     if (currentPlayer.isComputer) {
-        target = getComputerTarget(currentPlayer, players)
-        card = getComputerCard(currentPlayer, target)
+        target = currentPlayer.getComputerTarget(players)
+        card = currentPlayer.getComputerCard(target)
 
         // tryComputerDeclare(currentPlayer, players)
     } else {
@@ -266,7 +264,6 @@ function setUpPlayers(nameList, isComputerList) {
 }
 
 function dealCards(players) {
-
     const deck = makeNewDeck()
     shuffle(deck)
 
@@ -338,7 +335,7 @@ function runGame() {
 
 }
 
-// runGame()
+runGame()
 
 
 module.exports = {
@@ -348,7 +345,6 @@ module.exports = {
     Player,
     getCardInput,
     getTargetInput,
-    getComputerCard,
     doTurn,
     gameIsOver,
     setUpPlayers,
