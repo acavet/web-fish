@@ -8,7 +8,8 @@ const http = require("http");
 const { client } = require("websocket");
 const app = require("express")();
 app.get("/", (req,res)=> res.sendFile(__dirname + "/index.html"))
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/'));
+// app.use(express.static('./mystyle.css'));
 
 
 // Host on port 9090
