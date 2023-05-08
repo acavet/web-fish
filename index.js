@@ -9,8 +9,6 @@ const { client } = require("websocket");
 const app = require("express")();
 app.get("/", (req,res)=> res.sendFile(__dirname + "/index.html"))
 app.use(express.static(__dirname + '/'));
-// app.use(express.static('./mystyle.css'));
-
 
 // Host on port 9090
 // Listen on port 9091, so to text go to localhost:9091
@@ -168,39 +166,80 @@ wsServer.on("request", request => {
         if (result.method === "requestCard") {
 
             const gameId = result.gameId;
-            const requesterID = result.requesterID;
+            const requesterName = result.requesterName;
             const requesteeName = result.requesteeName;
 
-            if (!(requesteeName === undefined) && requesterID in clients) {
-                // Find requestee and requester client objects
-                let requesterDict = undefined;
-                let requesteeDict = undefined;
-                for (var i = 0; i < games[gameId].clients.length; ++i) {
-                    let clientDict = games[gameId].clients[i];
-                    if (clientDict.name === requesteeName) {
-                        clientDict.score -= 1;
-                        requesteeDict = clientDict;
-                    }
-                    if (clientDict.clientId === requesterID) {
-                        requesterDict = clientDict;
-                    }
+            // // Find requestee and requester client objects, if they exist
+            // let requesterDict = undefined;
+            // let requesteeDict = undefined;
+            // for (var i = 0; i < games[gameId].clients.length; ++i) {
+            //     let clientDict = games[gameId].clients[i];
+            //     if (clientDict.name === requesteeName) {
+            //         clientDict.score -= 1;
+            //         requesteeDict = clientDict;
+            //     }
+            //     if (clientDict.name === requesterName) {
+            //         requesterDict = clientDict;
+            //     }
+            // }
+            // // TODO check valid request given their hand
+            // // TODO check if player neeeds to return
+            // // TODO player's hands are influenced
+
+        
+            // if (!(requesterDict === undefined) && !(requesteeDict === undefined))
+            // {
+            //     let fishText = requesterDict.name + " requested " + result.suit + result.rank + " from " + requesteeDict.name;
+            //     // TODO do card move
+            //     console.log(fishText)
+            //     const payload = {
+            //         "method": "fishTextUpdate",
+            //         "fishText": fishText
+            //     };
+            //     games[gameId].clients.forEach(c => {
+            //         clients[c.clientId].connection.send(JSON.stringify(payload))
+            //     });
+            // } else {
+            //     console.log("ISSUES FINDING REQUESTING PLAYERS?")
+            // }
+
+
+
+
+            let requesterPlayer = undefined;
+            let requesteePlayer = undefined;
+
+            for (player of games[gameId].players) {
+                if (player.name === requesteeName) {
+                    requesteePlayer = player;
                 }
-                // TODO check valid request given their hand
-                // TODO check if player neeeds to return
-                // TODO player's hands are influenced
-                if (!(requesterDict === undefined) && !(requesteeDict === undefined))
-                {
-                    let fishText = requesterDict.name + " requested " + result.suit + result.rank + " from " + requesteeDict.name;
-                    // TODO do card move
-                    const payload = {
-                        "method": "fishTextUpdate",
-                        "fishText": fishText
-                    };
-                    games[gameId].clients.forEach(c => {
-                        clients[c.clientId].connection.send(JSON.stringify(payload))
-                    });
+                if (player.name === requesterName) {
+                    requesterPlayer = player;
                 }
-            } 
+            }
+            if (!(requesterPlayer === undefined) && !(requesteePlayer === undefined))
+            {
+                let fishText = requesterName + " requested " + result.suit + result.rank + " from " + requesteeName;
+
+
+            
+                console.log(fishText)
+
+                // requesterPlayer.askForCard(requesteePlayer, )
+
+
+                const payload = {
+                    "method": "fishTextUpdate",
+                    "fishText": fishText
+                };
+                games[gameId].clients.forEach(c => {
+                    clients[c.clientId].connection.send(JSON.stringify(payload))
+                });
+            } else {
+                console.log("ISSUES FINDING REQUESTING PLAYERS?")
+            }
+            
+            
         }
 
     })
