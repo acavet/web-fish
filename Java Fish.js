@@ -15,7 +15,6 @@ class Card {
     }
 
     get symbol() {
-        console.log(Card.rankSymbols)
         const rankString = Card.rankSymbols[this.rank]
         const suitString = Card.suitSymbols[this.suit]
 
@@ -90,18 +89,43 @@ class Player {
     // Returns true if legal ask
     askForCard(target, card, players) {
 
-        if (!this.canAskForCard(card)) return null
+    
+        if (!this.canAskForCard(card)) {
+            console.log("THIS PLAYER CANT ASK FOR THAT CARD!!!!!")
+            return null
+        }
 
         for (const c of makeNewDeck()) {
             if (c.isInSameSetAs(card)) this.maybeCards.add(c)
         }
    
         this.maybeCards.delete(card)
+
+
+        console.log("TARGET IS"+target.name)
         
+
+        console.log("ASKER REQUESTED  CARD"+card.symbol);
+
+        console.log("has method says"+target.hand.has(card))
+        console.log("in says"+(card in target.hand))
+        // console.log("contains method says"+target.hand.contains(card))
+        let contains = false;
+        let thing = undefined;
+        for (thing of target.hand) {
+            if (thing.equals(card)) contains = true;
+            console.log(thing.symbol)
+        }
+        console.log("impov says"+contains
+        )
+        
+
         if (target.hand.has(card)) {
 
-            target.hand.remove(card)
-            this.hand.add(card)
+            console.log("TARGET DOES HAVE"+card.symbol);
+
+            target.hand.remove(card); // TODO was remove not delete
+            this.hand.add(card);
 
             // Remove card from other players
             for (const player of players) {
@@ -114,6 +138,7 @@ class Player {
 
             return true
         } else {
+            console.log("TARGET DOESNT HAVE THAT CARD!!!!!")
             target.knownCards.delete(card)
             target.maybeCards.delete(card)
             return false
@@ -277,6 +302,7 @@ function printStatus(currentPlayer, players) {
     console.log("Your hand:")
 
     for (const player of players) {
+        console.log(player.name+":")
         let sortedHand = Array.from(player.hand)
 
         sortedHand.sort( function(a, b) {
@@ -294,7 +320,7 @@ function printStatus(currentPlayer, players) {
                 console.log()
                 console.log()
             } else {
-                process.stdout.write(", ")
+                console.log(", ")
             }
         }
     }

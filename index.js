@@ -141,6 +141,9 @@ wsServer.on("request", request => {
                 console.log("AI bools" + aiBools)
                 game.players = jf.setUpPlayers(names, aiBools);
 
+                // Deal cards
+                jf.dealCards(game.players);
+
                 // Signal start of game and start updating game state
                 const payload = {
                     "method": "alert",
@@ -160,8 +163,7 @@ wsServer.on("request", request => {
             })
         }
 
-        // A user makes a move
-        // TODO change all of this lol 
+        // A user makes a move TODO delete
         if (result.method === "play") {
             console.log("PLAYING A MOVE");
             const gameId = result.gameId;
@@ -177,9 +179,12 @@ wsServer.on("request", request => {
         // A user requests another player for a card TODO 
         if (result.method === "requestCard") {
 
+            
             const gameId = result.gameId;
-            const requesterName = result.requesterName;
-            const requesteeName = result.requesteeName;
+            let requesterName = result.requesterName;
+            let requesteeName = result.requesteeName;
+
+            // Carry out human player's turn
 
             let requesterPlayer = undefined;
             let requesteePlayer = undefined;
@@ -197,6 +202,16 @@ wsServer.on("request", request => {
 
 
             console.log("requester is " + requesterName)
+            console.log("requestee "+requesteePlayer.name+"hand is ")
+            // let hand = Array.from(requesteePlayer.hand)
+            // console.log("hand length is "+ requesteePlayer.hand.length)
+            // for (card of requesteePlayer.hand) {
+            //     console.log(card.symbol)
+            // }
+            console.log("requestee status")
+            jf.printStatus(requesteePlayer, games[gameId].players)
+            
+
             // Case on if the requester is an AI
             if (requesterPlayer.isComputer) {
                 console.log("requester is AI")
@@ -207,15 +222,18 @@ wsServer.on("request", request => {
                 console.log("requester NOT AI")
                 const rankNum = jf.Card.ranks.indexOf(result.rank);
                 const suitNum = jf.Card.suits.indexOf(result.suit);
-                console.log(rankNum, suitNum)
+                console.log("the indices of rank, suit in card rep for " + result.rank+result.suit+ " are " +rankNum +","+suitNum)
                 requestedCard = new jf.Card(rankNum, suitNum);    
             } 
 
-            console.log(requestedCard)
-            console.log(requestedCard.symbol)
-
             // Ask for card
             let goodAsk = requesterPlayer.askForCard(requesteePlayer, requestedCard, games[gameId].players);
+
+                console.log("Good ask?"+goodAsk)
+                // for (card of requesterPlayer.hand) {
+                //     console.log(card.symbol)
+                // }
+            
 
             // Figure out next player
             let nextPlayer = undefined;
@@ -225,9 +243,16 @@ wsServer.on("request", request => {
                 nextPlayer = requesteePlayer;
             }
 
+            // Change turns
+            let nextName = nextPlayer.name;
+            games[gameId].turn = nextName;
+
             // Update players on what turn happened
+            console.log("WAS A GOOD ASK:"+goodAsk)
             let requestText = requesterName + " requested " + requestedCard.symbol + " from " + requesteeName;
             let successText = " and was " + (goodAsk ? " " : "not ") + "successful, so the next player is " + nextPlayer.name;
+
+            
 
             let fishText = requestText + successText
             console.log(fishText)
@@ -240,9 +265,6 @@ wsServer.on("request", request => {
             });
 
 
-            // Change turns
-            let nextName = nextPlayer.name;
-            games[gameId].turn = nextName;
             // TODO
             const payload = {
                 "method": "alert",
