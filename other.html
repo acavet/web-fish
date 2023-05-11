@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="css" href="mystyle.css">
+    <link rel="stylesheet" href="mystyle.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>Fish Game</h1>
+
+    <button onclick = "setUpGame()"> New Game </button>
+
+    <div id = "gameContents", hidden = true>
+
+        <br>
+        <p id = "name0"></p>
+        <p id = "name1"></p>
+        <p id = "name2"></p>
+        <p id = "name3"></p>
+
+        <h2 style = "display:inline"> Selected Card: &nbsp; </h2>
+        <select id="rankSelection"></select> 
+        &nbsp; of &nbsp;
+        <select id="suitSelection"></select>
+        &nbsp;
+        <button onclick = "declareSet()", style = "width:120px;"> Declare </button>
+
+        <div id = "askForCardDiv"> 
+            <button onclick = "doNextTurn()", style = "width:120px;"> Ask </button>
+            &nbsp;
+            <select id="playerSelection"></select>
+        </div>
+        
+
+        <div id = "nextTurnDiv">
+            <button onclick = "doNextTurn(players)", style = "width:120px;"> Next Turn </button>
+        </div>
+
+        <div id = "declareSetDiv"> 
+            
+        </div>
+
+
+    </div>
+
+</body>
+
+<!-- Include Java Fish -->
+<script src = "Java Fish.js"></script>
+
+<!-- Global Variables -->
+<script> 
+    let currentPlayer = null
+    let players = [] 
+</script>
+
+<!-- Helper functions -->
+<script>
+
+    // Updates which players you can ask for
+    function updatePlayerSelections() {
+        const playerSelection = document.getElementById("playerSelection");
+        playerSelection.innerHTML = ""
+        for (const player of players) {
+            if (player == currentPlayer || player == currentPlayer.partner) {
+                continue
+            }
+            const newOption = document.createElement("option")
+            newOption.text = player.name
+            playerSelection.appendChild(newOption)
+        }    
+    }
+
+    // Todo: Based on what you can ask for?
+    function updateCardSelections(players) {
+        const rankSelection = document.getElementById("rankSelection");
+        rankSelection.innerHTML = ""
+        for (let i = 2; i < 15; i++) {
+            const newOption = document.createElement("option")
+            newOption.text = Card.ranks[i]
+            rankSelection.appendChild(newOption)
+        }
+
+        const suitSelection = document.getElementById("suitSelection");
+        suitSelection.innerHTML = ""
+        for (const suit of Card.suits) {
+            const newOption = document.createElement("option")
+            newOption.text = suit
+            suitSelection.appendChild(newOption)
+        }   
+
+        updatePlayerSelections()
+
+    }
+
+    // Show which cards are in your hand, and how many cards other players have
+    // Currenly shows all cards to debug
+    function updateHands(players) {
+
+        for (const i in players) {
+            const name = document.getElementById("name" + i)
+            let player = players[i]
+            nameText = player.name + ": ";
+
+            if (i != 0) {
+                nameText += `${player.hand.size} cards`
+                name.innerHTML = nameText
+                continue
+            }
+            nameText += "<br>"
+
+            let sortedHand = Array.from(player.hand)
+
+            sortedHand.sort( function(a, b) {
+                if (a.suit == b.suit) return a.rank - b.rank
+                else return a.suit - b.suit;
+            });
+
+            for (let i = 0; i < sortedHand.length; i++) {
+
+                nameText += sortedHand[i].symbol
+
+                if (i < sortedHand.length -1 && sortedHand[i+1].suit != sortedHand[i].suit) {
+                    nameText += "<br>"
+                } else if (i == sortedHand.length - 1) {
+                } else {
+                    nameText += ", "
+                }
+            }
+            name.innerHTML = nameText
+        }
+
+    }
+
+    // Updates whether "Ask" or "Next Turn" is divisble
+    function updateVisibleButtons() {
+        if (currentPlayer.isComputer) {
+            document.getElementById("askForCardDiv").hidden = true
+            document.getElementById("nextTurnDiv").hidden = false
+        } else {
+            document.getElementById("askForCardDiv").hidden = false
+            document.getElementById("nextTurnDiv").hidden = true
+        }
+    }
+
+    // Gets target based on selection
+    function getTarget() {
+        const playerSelection = document.getElementById("playerSelection")
+        const i = playerSelection.selectedIndex
+
+        for (const player of players) {
+            if (player.name == playerSelection.options[i].text) {
+                return player
+            }
+        }
+    }
+
+    // Gets card based on selection
+    function getCard() {
+        let rank = document.getElementById("rankSelection").selectedIndex + 2
+        let suit = document.getElementById("suitSelection").selectedIndex
+        return new Card(rank, suit)
+    }
+
+</script>
+
+<!-- setUpGame() -->
+<script>
+    function setUpGame() {
+        document.getElementById("gameContents").hidden = false
+        players = setUpPlayers(["Huit", "Conan", "Ana", "Hasan"], [false, true, true, true])
+        currentPlayer = players[0]
+        updateCardSelections(players)
+        dealCards(players)
+        updateHands(players)
+        updateVisibleButtons()
+    }
+</script>
+
+<!-- doNextTurn() -->
+<script>
+    function doNextTurn() {
+        let target = null
+        let card = null
+
+        if (currentPlayer.isComputer) {
+            target = currentPlayer.getComputerTarget(players)
+            card = currentPlayer.getComputerCard(target)
+            // tryComputerDeclare(currentPlayer, players)
+
+        } else {
+            target = getTarget()
+            card = getCard()
+        }
+
+        console.log(`${currentPlayer.name}: ${target.name}, do you have the ${card.symbol}?`)
+        result = currentPlayer.askForCard(target, card, players)
+
+        updateHands(players)
+
+        if (result == false) {
+            console.log(`${target.name}: no.`)
+            currentPlayer = target
+        } else if (result == true) {
+            console.log(`${target.name}: yes.`)
+        } else if (result == null) {
+            // print("You can't ask for that card!")
+        }
+
+        updateVisibleButtons()
+
+    }
+
+</script>
+
+<script>
+    function declareSet() {
+        const card = getCard()
+        players[0].declareSet(card, players)
+        updateHands()
+    }
+</script>

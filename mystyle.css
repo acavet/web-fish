@@ -1,6 +1,10 @@
+:root {
+    --navy: navy;
+}
+
 body {
     background-color: lightblue;
-    font-family: Luminari, fantasy;
+    font-family: 'Luminari', fantasy;
     font-size: 16px;
     margin-left: 50px;
 }
@@ -11,21 +15,21 @@ body {
 }
   
 h1 {
-    color: navy;
+    color: var(--navy);
     margin-left: 20px;
     text-align: center;
     font-size: 40px;
 }
 
 button {
-    background-color: white; /* Green */
+    background-color: white; 
     border: none;
     border-radius: 5px;
     color: black;
     margin: 8px 0;
     padding: 10px 10px;
     text-align: center;
-    font-family: Luminari, fantasy;
+    font-family: 'Luminari', fantasy;
     font-size: 16px;
     display: inline-block;
     transition-duration: 0.2s;
@@ -33,7 +37,7 @@ button {
 }
 
 button:hover {
-    background-color: navy; /* Green */
+    background-color: navy; 
     color: white;
 }
 
@@ -50,7 +54,7 @@ input {
     margin: 2px 0;
     padding: 10px 10px;
     text-align: left;
-    font-family: Luminari, fantasy;
+    font-family: 'Luminari', fantasy;
     font-size: 16px;
     display: inline-block;
 }
@@ -59,3 +63,24 @@ input[type="radio"] {
     margin: 2px 10px;
 }
 
+select{
+    width: 200px;
+    height: 40px;
+    border: 2px solid navy;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 16px;
+    font-family: 'Luminari', fantasy;
+    color: navy;
+    background-color: white;
+}
+select>option{
+    font-size: 18px;
+    font-family: 'Luminari', fantasy;
+    color: navy;
+    background-color: white;
+    font-size: 16px;
+    height: 40px;
+    padding: 15px;
+    border: 2px solid navy;
+}
