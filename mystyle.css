@@ -4,9 +4,10 @@
 
 body {
     background-color: lightblue;
+    color: black;
     font-family: 'Luminari', fantasy;
     font-size: 16px;
-    margin-left: 50px;
+    margin: 50px;
 }
 
 ::selection {
@@ -22,23 +23,30 @@ h1 {
 }
 
 button {
-    background-color: white; 
-    border: none;
+    height: 40px;
+    border: 2px solid wheat;
+    background-color: cornsilk;
     border-radius: 5px;
-    color: black;
-    margin: 8px 0;
-    padding: 10px 10px;
-    text-align: center;
-    font-family: 'Luminari', fantasy;
+    padding: 5px;
     font-size: 16px;
-    display: inline-block;
+    font-family: 'Luminari', fantasy;
+    color: navy;
     transition-duration: 0.2s;
     cursor: pointer;
+}
+
+button.name  {
     height: 40px;
+    width: 120px;
 }
 
 button:hover {
     background-color: navy; 
+    color: white;
+}
+
+button:disabled {
+    background-color: gray; 
     color: white;
 }
 
@@ -66,21 +74,36 @@ input[type="radio"] {
 
 select{
     height: 40px;
-    border: 2px solid navy;
     border-radius: 5px;
     padding: 5px;
     font-size: 16px;
     font-family: 'Luminari', fantasy;
     color: navy;
-    background-color: white;
+    border: 2px solid wheat;
+    background-color: cornsilk;
 }
 select>option{
     font-size: 18px;
     font-family: 'Luminari', fantasy;
     color: navy;
-    background-color: white;
+    border: 2px solid wheat;
+    background-color: cornsilk;
     font-size: 16px;
     height: 40px;
     padding: 15px;
     border: 2px solid navy;
+}
+
+tr {
+    margin-left: auto; 
+    margin-right: auto;
+    width: fit-content; 
+   
+    display: block;
+}
+
+td {
+    margin-left: auto;
+    margin-right: auto;
+    width: fit-content;
 }

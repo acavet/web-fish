@@ -8,42 +8,83 @@
     <title>Document</title>
 </head>
 
+<style>
+    .card {
+        float:left;
+        color:black;
+        height: 140px; 
+        aspect-ratio: 2.5/3.5;
+        background: cornsilk;
+        padding: 5px;
+        border: 2px solid navy;
+        border-radius: 5px;
+        font-size: 20pt;
+        position: relative;
+        margin-right: -60px;
+    }
+
+    .field {
+        float: left; 
+        width: 70%; 
+        height: 100%; 
+        background: rgba(0, 0, 128, 0.5);
+        border: 2px solid navy;
+        border-radius: 5px;
+    }
+    .gameLog {
+        height: 70vh; 
+        width: 25%; 
+        overflow: auto; 
+        border: 2px solid navy; 
+        border-radius: 5px; 
+        float: right; 
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+</style>
+
 <body>
     <h1>Fish Game</h1>
 
     <button onclick = "setUpGame()"> New Game </button>
-    <div id = "gameContents", hidden = true>
-        <div style = "width:50%; float:left">
-            <h id = "name0"></h> <br>
-            <h id = "name1"></h> <br>
-            <h id = "name2"></h> <br>
-            <h id = "name3"></h> <br>
-        
-            <h2 style = "display:inline"> Selected Card: &nbsp; </h2>
-            <select id="rankSelection"></select> 
-            &nbsp; of &nbsp;
-            <select id="suitSelection"></select>
-            &nbsp;
-            <button onclick = "declareSet()", style = "width:120px;"> Declare </button>
+    <div id = "gameContents", hidden = 'true', style = "height: 70vh">
+        <div id = "playingField", class = "field">
+            <table style = "width:90%; height: 90%; margin: auto; margin-top: 20px">
+                <tr style = "height: 15%"> 
+                    <td> <button id = "name2", class = "name"> </button> </td>
+                </tr>
+                <tr style = "width:100%; height: 15%">  
+                    <td style = "float:left"><button onclick = "doNextTurn(this)" id = "name1", class = "name"> </button> </td>
+                    <td style = "float:right"><button onclick = "doNextTurn(this)" id = "name3", class = "name"> </button> </td>
+                </tr>
+                <tr style = "clear: both; height: 35%">
+                    <td>
+                        <h2 style = "margin:auto; width:fit-content; color:wheat"> Selected Card </h2> <br>
+                   
+                        <select id="rankSelection"></select> 
+                        &nbsp; of &nbsp;
+                        <select id="suitSelection"></select>
+                        <br>
+    
+                        <div id = "nextTurnButton", hidden = "hidden", style = "margin:auto; width:fit-content">
+                            <button onclick = "doNextTurn(players)", style = "width:120px"> Next Turn </button>
+                        </div>
+                    </td>
+                <tr style = 'height: 25%'>  
+                    <td>
+                        <div style = "display:block; width:fit-content; overflow-x:scroll; overflow-y:hidden height: 100%">
+                            <div id = "name0" style = "display:table; height:100%"> </div>
+                        </div>
+                    </td>
+                </tr>
+                   
+            </table>
 
-            <div id = "askForCardDiv"> 
-                <button onclick = "doNextTurn()", style = "width:120px;"> Ask </button>
-                &nbsp;
-                <select id="playerSelection"></select>
-            </div>
-            
-
-            <div id = "nextTurnDiv">
-                <button onclick = "doNextTurn(players)", style = "width:120px;"> Next Turn </button>
-            </div>
-
-            <div id = "declareSetDiv"> 
-                
-            </div>
         </div>
 
-        <div style = "height: 500px; overflow: auto; border: 2px solid navy; border-radius: 5px; margin: 0px 100px"> 
-            <table id = "gameLogTable" style = "width: 50%; float:left; margin: 20px">  
+        <!-- Game Log -->
+        <div class = "gameLog"> 
+            <table id = "gameLogTable" style = "margin: 20px; display: inline">  
             </table>
         </div>
         
@@ -63,20 +104,6 @@
 <!-- Helper functions -->
 <script>
 
-    // Updates which players you can ask for
-    function updatePlayerSelections() {
-        const playerSelection = document.getElementById("playerSelection");
-        playerSelection.innerHTML = ""
-        for (const player of players) {
-            if (player == currentPlayer || player == currentPlayer.partner) {
-                continue
-            }
-            const newOption = document.createElement("option")
-            newOption.text = player.name
-            playerSelection.appendChild(newOption)
-        }    
-    }
-
     // Todo: Based on what you can ask for?
     function updateCardSelections(players) {
         const rankSelection = document.getElementById("rankSelection");
@@ -95,8 +122,6 @@
             suitSelection.appendChild(newOption)
         }   
 
-        updatePlayerSelections()
-
     }
 
     // Show which cards are in your hand, and how many cards other players have
@@ -106,14 +131,15 @@
         for (const i in players) {
             const name = document.getElementById("name" + i)
             let player = players[i]
-            nameText = player.name + ": ";
+            name.innerHTML = ""
 
             if (i != 0) {
-                nameText += `${player.hand.size} cards`
-                name.innerHTML = nameText
+                // nameText = player.name + ": ";
+                // nameText += `${player.hand.size} cards`
+                // name.innerHTML = nameText
+                name.innerHTML = player.name
                 continue
             }
-            nameText += "<br>"
 
             let sortedHand = Array.from(player.hand)
 
@@ -124,16 +150,16 @@
 
             for (let i = 0; i < sortedHand.length; i++) {
 
-                nameText += sortedHand[i].symbol
+                let card = document.createElement("div")
+                card.className = "card"
+                card.innerText = sortedHand[i].symbol
+                name.appendChild(card)
 
-                if (i < sortedHand.length -1 && sortedHand[i+1].suit != sortedHand[i].suit) {
-                    nameText += "<br>"
-                } else if (i == sortedHand.length - 1) {
-                } else {
-                    nameText += ", "
+                if (i == sortedHand.length-1) {
+                    card.style.margin = "0px";
                 }
             }
-            name.innerHTML = nameText
+            
         }
 
     }
@@ -141,21 +167,20 @@
     // Updates whether "Ask" or "Next Turn" is divisble
     function updateVisibleButtons() {
         if (currentPlayer.isComputer) {
-            document.getElementById("askForCardDiv").hidden = true
-            document.getElementById("nextTurnDiv").hidden = false
+            thing = document.getElementById("name1").disabled = true
+            document.getElementById("name3").disabled = true
+            document.getElementById("nextTurnButton").hidden = false
         } else {
-            document.getElementById("askForCardDiv").hidden = false
-            document.getElementById("nextTurnDiv").hidden = true
+            document.getElementById("name1").disabled = false
+            document.getElementById("name3").disabled = false
+            document.getElementById("nextTurnButton").hidden = "hidden"
         }
     }
 
     // Gets target based on selection
-    function getTarget() {
-        const playerSelection = document.getElementById("playerSelection")
-        const i = playerSelection.selectedIndex
-
+    function getTarget(name) {
         for (const player of players) {
-            if (player.name == playerSelection.options[i].text) {
+            if (player.name == name) {
                 return player
             }
         }
@@ -186,7 +211,7 @@
 
 <!-- doNextTurn() -->
 <script>
-    function doNextTurn() {
+    function doNextTurn(button = undefined) {
         let target = null
         let card = null
 
@@ -194,9 +219,8 @@
             target = currentPlayer.getComputerTarget(players)
             card = currentPlayer.getComputerCard(target)
             // tryComputerDeclare(currentPlayer, players)
-
         } else {
-            target = getTarget()
+            target = getTarget(button.textContent)
             card = getCard()
         }
 
@@ -232,6 +256,6 @@
     function declareSet() {
         const card = getCard()
         players[0].declareSet(card, players)
-        updateHands()
+        updateHands(players)
     }
 </script>
