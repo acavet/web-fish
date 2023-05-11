@@ -40,6 +40,21 @@ class Card {
     }
 }
 
+Set.prototype.hasCard = function(item) {
+
+    for (let thing of this) {
+        if (thing.equals(item)) return true
+    }
+    return false
+}
+
+Set.prototype.removeCard = function(item) {
+
+    for (let thing of this) {
+        if (thing.equals(item)) this.delete(thing)
+    }
+}
+
 function shuffle(array) {
     let currentIndex = array.length 
     let randomIndex;
@@ -99,38 +114,36 @@ class Player {
             if (c.isInSameSetAs(card)) this.maybeCards.add(c)
         }
    
-        this.maybeCards.delete(card)
+        this.maybeCards.removeCard(card)
 
 
-        console.log("TARGET IS"+target.name)
+        // console.log("TARGET IS"+target.name)
         
 
-        console.log("ASKER REQUESTED  CARD"+card.symbol);
+        // console.log("ASKER REQUESTED  CARD"+card.symbol);
 
-        console.log("has method says"+target.hand.has(card))
-        console.log("in says"+(card in target.hand))
+        // console.log("has method says"+target.hand.hasCardcard))
+        // console.log("in says"+(card in target.hand))
         // console.log("contains method says"+target.hand.contains(card))
-        let contains = false;
-        let thing = undefined;
-        for (thing of target.hand) {
-            if (thing.equals(card)) contains = true;
-            console.log(thing.symbol)
-        }
-        console.log("impov says"+contains
-        )
+        // let contains = false;
+        // let thing = undefined;
+        // for (thing of target.hand) {
+        //     if ((card.rank == thing.rank) && (card.suit == thing.suit)) contains = true;
+        // }
+        // console.log("impov says "+contains)
         
 
-        if (target.hand.has(card)) {
+        if (target.hand.hasCard(card)) {
 
-            console.log("TARGET DOES HAVE"+card.symbol);
+            // console.log("TARGET DOES HAVE"+card.symbol);
 
-            target.hand.remove(card); // TODO was remove not delete
+            target.hand.removeCard(card); // TODO was delete not delete
             this.hand.add(card);
 
-            // Remove card from other players
+            // delete card from other players
             for (const player of players) {
-                player.knownCards.delete(card)
-                player.maybeCards.delete(card)
+                player.knownCards.removeCard(card)
+                player.maybeCards.removeCard(card)
             }
 
             // The asking player has the card
@@ -138,40 +151,40 @@ class Player {
 
             return true
         } else {
-            console.log("TARGET DOESNT HAVE THAT CARD!!!!!")
-            target.knownCards.delete(card)
-            target.maybeCards.delete(card)
+            // console.log("TARGET DOESNT HAVE THAT CARD!!!!!")
+            target.knownCards.removeCard(card)
+            target.maybeCards.removeCard(card)
             return false
         }
     }
 
-    static declareSet(card, players) {
+    declareSet(card, players) {
         let goodDeclaration = true
         // Go through all cards of deck
 
         for (const c of makeNewDeck()) {
             if (c.isInSameSetAs(card)) {
-                if (self.hand.has(c)) {
-                    self.hand.remove(c)
-                } else if (self.partner.hand.has(c)) {
-                    self.partner.hand.remove(c)
+                if (this.hand.hasCard(c)) {
+                    this.hand.removeCard(c)
+                } else if (this.partner.hand.hasCard(c)) {
+                    this.partner.hand.removeCard(c)
                 } else {
                     goodDeclaration = false
                 }
             }
         }
-        // print("%s declares the set with the %s, " % (self.name, card.getName()), end = "")
+        // print("%s declares the set with the %s, " % (this.name, card.getName()), end = "")
 
         if (goodDeclaration) {
-            self.points += 1
-            // print("and they are successful.")
+            this.points += 1
+            console.log("and they are successful.")
             return
         }
-        // print("but they are unsuccessful.")
+        console.log("but they are unsuccessful.")
 
         for (const c of makeNewDeck()) {
             if (c.isInSameSetAs(card)) {
-                for (let player of players) player.hand.delete(c)
+                for (let player of players) player.hand.removeCard(c)
             }   
         }
         return
@@ -188,7 +201,7 @@ class Player {
         }
     
         for (const targetCard of target.maybeCards) {
-            if (!this.hand.has(targetCard)) {
+            if (!this.hand.hasCard(targetCard)) {
                 for (const card of this.hand) {
                     if (card.isInSameSetAs(targetCard)) {
                         return targetCard
@@ -200,7 +213,7 @@ class Player {
         const deck = makeNewDeck()
         shuffle(deck)
         for (const card of deck) {
-            if (!(this.hand.has(card)) && this.canAskForCard(card)) {
+            if (!(this.hand.hasCard(card)) && this.canAskForCard(card)) {
                 return card
             }
         }
@@ -364,17 +377,17 @@ function runGame() {
 // runGame()
 
 
-module.exports = {
-    Card,
-    shuffle,
-    makeNewDeck,
-    Player,
-    getCardInput,
-    getTargetInput,
-    doTurn,
-    gameIsOver,
-    setUpPlayers,
-    dealCards,
-    printStatus,
-    test
-}
+// module.exports = {
+//     Card,
+//     shuffle,
+//     makeNewDeck,
+//     Player,
+//     getCardInput,
+//     getTargetInput,
+//     doTurn,
+//     gameIsOver,
+//     setUpPlayers,
+//     dealCards,
+//     printStatus,
+//     test
+// }
