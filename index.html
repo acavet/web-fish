@@ -41,7 +41,6 @@
         <label for="rankChoiceDiv">Choose a rank:</label>
         <div name="rankChoiceDiv" id="rankChoiceDiv"></div>
         <br/>
-        <button id='submitMoveBtn'>Submit Move</button>
     </div>
 
     <h2>Gameplay</h2>
@@ -51,6 +50,7 @@
     <p>Your score is</p>
     <p id="scoreTracker"></p>
     <div id='boardDiv'></div>
+    
 
     <script>
         // Next todos:
@@ -63,6 +63,7 @@
         let clientId = null;
         let gameId = null;
         let playerName = null;
+        let currentTurn = 0;
 
         const RANKS = ["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "jack", "queen", "king", "ace"];
         const SUITS = ["spades", "diamonds", "hearts", "clubs"];
@@ -85,7 +86,6 @@
         const playerChoice = document.getElementById("playerChoiceDiv");
         const rankChoice = document.getElementById("rankChoice");
         const suitChoice = document.getElementById("suitChoice");
-        const submitMoveBtn = document.getElementById("submitMoveBtn");
 
         // Creating new game logic 
         generateGameBtn.addEventListener("click", e => {
@@ -115,29 +115,7 @@
             ws.send(JSON.stringify(payload));
         })
 
-        // Submitting move logic
-        submitMoveBtn.addEventListener("click", e => {
-            // If not already in a game, read text in from box
-            if (gameStarted === false) {
-                return;
-            }
-            
-            let requesteeName = document.querySelector('input[name="playerChoice"]:checked').value;
-            let suitSelected = document.querySelector('input[name="suitChoice"]:checked').value;
-            let rankSelected = document.querySelector('input[name="rankChoice"]:checked').value;
-
-            console.log("making a move??");
-
-            const payload = {
-                "method": "requestCard",
-                "requesterName": name,
-                "requesteeName": requesteeName,
-                "gameId": gameId,
-                "suit": suitSelected,
-                "rank": rankSelected
-            }
-            ws.send(JSON.stringify(payload));
-        })
+        
 
         // Connect event logic through 
         ws.onmessage = message => {
@@ -170,59 +148,48 @@
                 // Add fish gameplay text
                 const newText = document.createElement("p");
                 newText.textContent = response.fishText;
-                gameTextDiv.appendChild(newText);
+                gameTextDiv.prepend(newText);
             }
 
             // Update board with moves
             if (response.method === "update") {
                 console.log("UPDATING BOARD");
                 
+                let game = response.game;
+
                 // Game message display, if there is one
-                if (response.game.message.length > 0) {
+                if (game.message.length > 0) {
                     gameMessage.textContent = response.game.message;
                 }
-                
-                // Update squares lmao 
-                if (!response.game.state) return;
-                for(const b of Object.keys(response.game.state))
-                {
-                    const name = response.game.state[b];
-                    const ballObject = document.getElementById("ball" + b);
-                    ballObject.textContent = name;
-                }
 
-                // Update client score if applicable
-                response.game.clients.forEach (c => {
-                    // Set this player's name
-                    if (c.clientId === clientId) scoreTracker.textContent = c.score;
-                })  
+                console.log("current turn is "+currentTurn + "or "+response.game.turnNumber)
 
-            }
+                // If a turn has happened
+                if (gameStarted && currentTurn != response.game.turnNumber) {
 
-            // When a player joins the game, add their name and re-render player list
-            if (response.method === "join"){
-                const game = response.game;
+                    // Update turn #
+                    currentTurn = response.game.turnNumber;
 
-                // Remove all players from list 
-                while(divPlayers.firstChild)
-                    divPlayers.removeChild (divPlayers.firstChild)
+                    // Clear forms
+                    while(playerChoiceDiv.firstChild) {
+                        playerChoiceDiv.removeChild (playerChoiceDiv.firstChild)
+                    }
+                    while(suitChoiceDiv.firstChild) {
+                        suitChoiceDiv.removeChild (suitChoiceDiv.firstChild)
+                    }
+                    while(rankChoiceDiv.firstChild) {
+                        rankChoiceDiv.removeChild (rankChoiceDiv.firstChild)
+                    }
+                    if (document.contains(document.getElementById("submitMoveBtn"))) {
+                        document.getElementById("submitMoveBtn").remove();
+                    }
 
-                // Redo player list
-                game.players.forEach (pname => {
-                    const d = document.createElement("div");
-                    d.style.width = "200px";
-                    // d.style.background = c.name;
-                    d.textContent = pname;
-                    divPlayers.appendChild(d);
-                })
 
-                // Clear then draw game options
-                if (game.playing) {
-                    gameStarted = true;
                     // Fill out game move action form with clients, ranks, suits
                     for (gamePlayer of game.players) {
+                        console.log(response.partnerOf)
                         // TODO remove partner etc
-                        if (!(gamePlayer === playerName)) {
+                        if (!(gamePlayer === playerName) && !(gamePlayer === response.partners[gamePlayer])) {
                             const opt = document.createElement("input");
                             opt.type = "radio";
                             opt.value = gamePlayer;
@@ -257,38 +224,108 @@
                         rankChoiceDiv.appendChild(linebreak);
                     }
 
-                    // Board for square game 
-                    while(boardDiv.firstChild)
-                    boardDiv.removeChild (boardDiv.firstChild)
-                    for (let i = 0; i < game.balls; i++){
-                        const b = document.createElement("button");
-                        b.id = "ball" + (i+1);
-                        b.tag = i+1
-                        b.textContent = i+1;
-                        b.style.width = "150px"
-                        b.style.height = "150px"
-                        // Event listener to signal when one player clicks a square
-                        b.addEventListener("click", e => {
-                            let lastPlayer = b.textContent;
-                            b.textContent = playerName;
-                            const payload = {
-                                "method": "play",
-                                "clientId": clientId,
-                                "gameId": gameId,
-                                "ballId": b.tag,
-                                "name": playerName
-                            }
-                            ws.send(JSON.stringify(payload))
-                            const payload2 = {
-                                "method": "requestCard",
-                                "requesterID": clientId,
-                                "requesteeName": lastPlayer,
-                                "gameId": gameId
-                            }
-                            ws.send(JSON.stringify(payload2))
-                        })
-                        boardDiv.appendChild(b);
-                    }    
+                    // Submitting move logic
+                    const submitMoveBtn = document.createElement("button");
+                    submitMoveBtn.id = "submitMoveBtn";
+                    submitMoveBtn.textContent = "Submit Move";
+                    rankChoiceDiv.after(submitMoveBtn);
+
+                    submitMoveBtn.addEventListener("click", e => {
+                        // If not already in a game, read text in from box
+                        if (gameStarted === false) {
+                            return;
+                        }
+                        
+                        let requesteeName = document.querySelector('input[name="playerChoice"]:checked').value;
+                        let suitSelected = document.querySelector('input[name="suitChoice"]:checked').value;
+                        let rankSelected = document.querySelector('input[name="rankChoice"]:checked').value;
+
+                        console.log("making a move??");
+
+                        const payload = {
+                            "method": "requestCard",
+                            "requesterName": name,
+                            "requesteeName": requesteeName,
+                            "gameId": gameId,
+                            "suit": suitSelected,
+                            "rank": rankSelected
+                        }
+                        ws.send(JSON.stringify(payload));
+                    })
+
+                        // Board for square game 
+                        while(boardDiv.firstChild) {
+                            boardDiv.removeChild (boardDiv.firstChild)
+                        }
+                        for (let i = 0; i < game.balls; i++){
+                            const b = document.createElement("button");
+                            b.id = "ball" + (i+1);
+                            b.tag = i+1
+                            b.textContent = i+1;
+                            b.style.width = "150px"
+                            b.style.height = "150px"
+                            // Event listener to signal when one player clicks a square
+                            b.addEventListener("click", e => {
+                                let lastPlayer = b.textContent;
+                                b.textContent = playerName;
+                                const payload = {
+                                    "method": "play",
+                                    "clientId": clientId,
+                                    "gameId": gameId,
+                                    "ballId": b.tag,
+                                    "name": playerName
+                                }
+                                ws.send(JSON.stringify(payload))
+                                const payload2 = {
+                                    "method": "requestCard",
+                                    "requesterID": clientId,
+                                    "requesteeName": lastPlayer,
+                                    "gameId": gameId
+                                }
+                                ws.send(JSON.stringify(payload2))
+                            })
+                            boardDiv.appendChild(b);
+                        }    
+                    
+                    
+                    // Update squares lmao 
+                    if (!response.game.state) return;
+                    for(const b of Object.keys(response.game.state))
+                    {
+                        const name = response.game.state[b];
+                        const ballObject = document.getElementById("ball" + b);
+                        ballObject.textContent = name;
+                    }
+
+                    // Update client score if applicable
+                    response.game.clients.forEach (c => {
+                        // Set this player's name
+                        if (c.clientId === clientId) scoreTracker.textContent = c.score;
+                    })  
+                }
+
+            }
+
+            // When a player joins the game, add their name and re-render player list
+            if (response.method === "join"){
+                const game = response.game;
+
+                // Remove all players from list 
+                while(divPlayers.firstChild)
+                    divPlayers.removeChild (divPlayers.firstChild)
+
+                // Redo player list
+                game.players.forEach (pname => {
+                    const d = document.createElement("div");
+                    d.style.width = "200px";
+                    // d.style.background = c.name;
+                    d.textContent = pname;
+                    divPlayers.appendChild(d);
+                })
+
+                // If game starting 
+                if (game.playing) {
+                    gameStarted = true;
                 }
 
             }

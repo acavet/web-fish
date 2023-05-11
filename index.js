@@ -76,7 +76,11 @@ wsServer.on("request", request => {
                 "playing": false,
                 "message": "",
                 "deck": undefined,
-                "turn": ""
+                "turn": "",
+                "turnNumber": 0,
+                "isAiTurn": false,
+                "starterClientId": result.clientId,
+                "owner": ""
             }
 
             // Data to return back to game HTML
@@ -119,38 +123,7 @@ wsServer.on("request", request => {
             // Start the game once we reach XXX players
             // TODO make it so we don't need max players
             if (game.clients.length === MAX_PLAYERS) {
-                // Start game
-                game.playing = true;
-
-                // Get irl player names here
-                let names = game.clients.map(function (client) { return client.name });
-
-                // Add comedian names TODO jank temp logic
-                const numberNotAi = names.length;
-                while (names.length < 4) {
-                    names.push("amyNumber"+names.length);
-                }
-                var aiBools = [];
-                for (i = 0; i < TOTAL_PLAYERS; i++) {
-                    var b = true;
-                    if (i < numberNotAi) {
-                        var b = false;
-                    } 
-                    aiBools.push(b);
-                }
-                console.log("AI bools" + aiBools)
-                game.players = jf.setUpPlayers(names, aiBools);
-
-                // Deal cards
-                jf.dealCards(game.players);
-
-                // Signal start of game and start updating game state
-                const payload = {
-                    "method": "alert",
-                    "message": "The game has started."
-                }
-                connection.send(JSON.stringify(payload));
-                updateGameState();
+                startGame(game, connection);
             }
 
             // Inform each client of the game status
@@ -247,6 +220,9 @@ wsServer.on("request", request => {
             let nextName = nextPlayer.name;
             games[gameId].turn = nextName;
 
+            // Update turn # 
+            games[gameId].turnNumber += 1;
+
             // Update players on what turn happened
             console.log("WAS A GOOD ASK:"+goodAsk)
             let requestText = requesterName + " requested " + requestedCard.symbol + " from " + requesteeName;
@@ -302,9 +278,11 @@ function updateGameState(){
     // Loop through each game
     for (const g of Object.keys(games)) {
         const game = games[g];
+        let partnerOf = Object.assign({}, ...game.players.map((player) => ({[player.name]: player.partner.name})));
         const payload = {
             "method": "update",
-            "game": game
+            "game": game,
+            "partners": partnerOf
         };
         const payloadJSON = JSON.stringify(payload, replacerFunc());
         // Send game updates in JSON payload to each client 
@@ -316,6 +294,55 @@ function updateGameState(){
     // Time between game updates
     setTimeout(updateGameState, 500);
 }
+
+// Begin game and signal to players
+function startGame(game, connection) {
+    // Start game
+    game.playing = true;
+    game.turnNumber += 1;
+
+    // Set game owner
+    let owner = game.clients[0].name;
+    for (clientDict of game.clients) {
+        if (clientDict.clientId === game.starterClientId) {
+            owner = clientDict.name;
+        }
+    }
+    game.owner = owner;
+    console.log("GAME OWNER "+owner)
+
+    // Get irl player names here
+    let names = game.clients.map(function (client) { return client.name });
+
+    // Add comedian names TODO jank temp logic
+    const numberNotAi = names.length;
+    while (names.length < 4) {
+        names.push("amyNumber"+names.length);
+    }
+    var aiBools = [];
+    for (i = 0; i < TOTAL_PLAYERS; i++) {
+        var b = true;
+        if (i < numberNotAi) {
+            var b = false;
+        } 
+        aiBools.push(b);
+    }
+    console.log("AI bools" + aiBools)
+    game.players = jf.setUpPlayers(names, aiBools);
+
+    // Deal cards
+    jf.dealCards(game.players);
+
+    // Signal start of game and start updating game state
+    const payload = {
+        "method": "alert",
+        "message": "The game has started."
+    }
+    connection.send(JSON.stringify(payload));
+    updateGameState();
+}
+
+
 
 
 
