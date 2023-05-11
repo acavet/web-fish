@@ -24,9 +24,10 @@ const players = {};
 const games = {};
 
 // Global variables
-const MAX_PLAYERS = 2;
+const MAX_PLAYERS = 1;
 const TOTAL_PLAYERS = 4;
-const GAME_NAMES = ["Horse", "Pig", "Dog", "Cat", "Parrot", "Iguana"];// TODO 
+const fs = require("fs");
+var available_game_names = fs.readFileSync('./fishnames.txt').toString().split("\n");
 
 // Helper function to avoid player circles
 const replacerFunc = () => {
@@ -65,7 +66,10 @@ wsServer.on("request", request => {
         // When a user creates a new game 
         if (result.method === "create") {
             const clientId = result.clientId;
-            const gameId = guid();
+
+
+            //const gameId = guid();
+            const gameId = available_game_names.splice(Math.floor(Math.random()*available_game_names.length), 1);
 
             // Add game id and metadata to game dictionary
             games[gameId] = {
@@ -157,7 +161,6 @@ wsServer.on("request", request => {
             let requesteeName = result.requesteeName;
 
             // Carry out human player's turn
-
             let requesterPlayer = undefined;
             let requesteePlayer = undefined;
             let requestedCard = undefined;
@@ -172,9 +175,6 @@ wsServer.on("request", request => {
                 }
             }
 
-
-            
-            
 
             // Case on if the requester is an AI
             if (requesterPlayer.isComputer) {
@@ -193,7 +193,6 @@ wsServer.on("request", request => {
             // Ask for card
             let goodAsk = requesterPlayer.askForCard(requesteePlayer, requestedCard, games[gameId].players);
             
-
             // Figure out next player
             let nextPlayer = undefined;
             if (goodAsk) {
