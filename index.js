@@ -67,7 +67,7 @@ wsServer.on("request", request => {
             const clientId = result.clientId;
             const gameId = guid();
 
-            // Add game id and metadata to game dictionaty
+            // Add game id and metadata to game dictionary
             games[gameId] = {
                 "id": gameId,
                 "balls": 20,
@@ -174,38 +174,24 @@ wsServer.on("request", request => {
             }
 
 
-            console.log("requester is " + requesterName)
-            console.log("requestee "+requesteePlayer.name+"hand is ")
-            // let hand = Array.from(requesteePlayer.hand)
-            // console.log("hand length is "+ requesteePlayer.hand.length)
-            // for (card of requesteePlayer.hand) {
-            //     console.log(card.symbol)
-            // }
-            console.log("requestee status")
-            jf.printStatus(requesteePlayer, games[gameId].players)
+            
             
 
             // Case on if the requester is an AI
             if (requesterPlayer.isComputer) {
                 console.log("requester is AI")
-                
                 requesteePlayer = requesterPlayer.getComputerTarget(games[gameId].players);
                 requestedCard = requesterPlayer.getComputerCard(requesteePlayer);
             } else { // If not a computer 
                 console.log("requester NOT AI")
+                jf.printStatus(requesteePlayer, games[gameId].players)
                 const rankNum = jf.Card.ranks.indexOf(result.rank);
                 const suitNum = jf.Card.suits.indexOf(result.suit);
-                console.log("the indices of rank, suit in card rep for " + result.rank+result.suit+ " are " +rankNum +","+suitNum)
                 requestedCard = new jf.Card(rankNum, suitNum);    
             } 
 
             // Ask for card
             let goodAsk = requesterPlayer.askForCard(requesteePlayer, requestedCard, games[gameId].players);
-
-                console.log("Good ask?"+goodAsk)
-                // for (card of requesterPlayer.hand) {
-                //     console.log(card.symbol)
-                // }
             
 
             // Figure out next player
@@ -333,12 +319,18 @@ function startGame(game, connection) {
     // Deal cards
     jf.dealCards(game.players);
 
+    // Choose first player randomly 
+    const firstPlayer = game.players[Math.floor(Math.random()*game.players.length)];
+    game.turn = firstPlayer.name;
+
     // Signal start of game and start updating game state
     const payload = {
         "method": "alert",
         "message": "The game has started."
     }
     connection.send(JSON.stringify(payload));
+
+    // Begin game update loop 
     updateGameState();
 }
 

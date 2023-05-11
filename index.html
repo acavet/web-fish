@@ -45,11 +45,6 @@
 
     <h2>Gameplay</h2>
     <div id='gameTextDiv'></div>
-
-    <h2>Ignore the board below this </h2>
-    <p>Your score is</p>
-    <p id="scoreTracker"></p>
-    <div id='boardDiv'></div>
     
 
     <script>
@@ -78,8 +73,6 @@
         const gameIdTxt = document.getElementById("gameIdTxt");
         const clientIdTxt = document.getElementById("clientIdTxt");
         const divPlayers = document.getElementById("playersListDiv");
-        const boardDiv = document.getElementById("boardDiv");
-        const scoreTracker = document.getElementById("scoreTracker");
         const gameMessage = document.getElementById("gameMessage");
         const gameTextDiv = document.getElementById("gameTextDiv");
 
@@ -125,7 +118,6 @@
 
             // Initial connection to game: log client id to console and display
             if (response.method === "connect") {
-                // gameIdTxt.textContent = gameId;
                 clientIdTxt.textContent = response.clientId;
                 clientId = response.clientId;
                 console.log("Client id Set successfully " + response.clientId)
@@ -170,7 +162,7 @@
                     // Update turn #
                     currentTurn = response.game.turnNumber;
 
-                    // Clear forms
+                    // Clear forms, if they are there
                     while(playerChoiceDiv.firstChild) {
                         playerChoiceDiv.removeChild (playerChoiceDiv.firstChild)
                     }
@@ -183,125 +175,103 @@
                     if (document.contains(document.getElementById("submitMoveBtn"))) {
                         document.getElementById("submitMoveBtn").remove();
                     }
+                    if (document.contains(document.getElementById("promptMoveBtn"))) {
+                        document.getElementById("promptMoveBtn").remove();
+                    }
 
 
+                    // If it is the current player's turn:
                     // Fill out game move action form with clients, ranks, suits
-                    for (gamePlayer of game.players) {
-                        console.log(response.partnerOf)
-                        // TODO remove partner etc
-                        if (!(gamePlayer === playerName) && !(gamePlayer === response.partners[gamePlayer])) {
+                    if (game.turn === name) {
+                        for (gamePlayer of game.players) {
+                            console.log(response.partnerOf)
+                            // TODO remove partner etc
+                            if (!(gamePlayer === playerName) && !(gamePlayer === response.partners[gamePlayer])) {
+                                const opt = document.createElement("input");
+                                opt.type = "radio";
+                                opt.value = gamePlayer;
+                                opt.name = "playerChoice"
+                                const text = document.createTextNode(gamePlayer);
+                                const linebreak = document.createElement("br");
+                                playerChoiceDiv.appendChild(opt);
+                                playerChoiceDiv.appendChild(text);
+                                playerChoiceDiv.appendChild(linebreak);
+                            }
+                        }
+                        for (suit of SUITS) {
                             const opt = document.createElement("input");
                             opt.type = "radio";
-                            opt.value = gamePlayer;
-                            opt.name = "playerChoice"
-                            const text = document.createTextNode(gamePlayer);
+                            opt.value = suit;
+                            opt.name = "suitChoice"
+                            const text = document.createTextNode(suit);
                             const linebreak = document.createElement("br");
-                            playerChoiceDiv.appendChild(opt);
-                            playerChoiceDiv.appendChild(text);
-                            playerChoiceDiv.appendChild(linebreak);
+                            suitChoiceDiv.appendChild(opt);
+                            suitChoiceDiv.appendChild(text);
+                            suitChoiceDiv.appendChild(linebreak);
                         }
-                    }
-                    for (suit of SUITS) {
-                        const opt = document.createElement("input");
-                        opt.type = "radio";
-                        opt.value = suit;
-                        opt.name = "suitChoice"
-                        const text = document.createTextNode(suit);
-                        const linebreak = document.createElement("br");
-                        suitChoiceDiv.appendChild(opt);
-                        suitChoiceDiv.appendChild(text);
-                        suitChoiceDiv.appendChild(linebreak);
-                    }
-                    for (rank of RANKS) {
-                        const opt = document.createElement("input");
-                        opt.type = "radio";
-                        opt.value = rank;
-                        opt.name = "rankChoice"
-                        const text = document.createTextNode(rank);
-                        const linebreak = document.createElement("br");
-                        rankChoiceDiv.appendChild(opt);
-                        rankChoiceDiv.appendChild(text);
-                        rankChoiceDiv.appendChild(linebreak);
-                    }
-
-                    // Submitting move logic
-                    const submitMoveBtn = document.createElement("button");
-                    submitMoveBtn.id = "submitMoveBtn";
-                    submitMoveBtn.textContent = "Submit Move";
-                    rankChoiceDiv.after(submitMoveBtn);
-
-                    submitMoveBtn.addEventListener("click", e => {
-                        // If not already in a game, read text in from box
-                        if (gameStarted === false) {
-                            return;
+                        for (rank of RANKS) {
+                            const opt = document.createElement("input");
+                            opt.type = "radio";
+                            opt.value = rank;
+                            opt.name = "rankChoice"
+                            const text = document.createTextNode(rank);
+                            const linebreak = document.createElement("br");
+                            rankChoiceDiv.appendChild(opt);
+                            rankChoiceDiv.appendChild(text);
+                            rankChoiceDiv.appendChild(linebreak);
                         }
-                        
-                        let requesteeName = document.querySelector('input[name="playerChoice"]:checked').value;
-                        let suitSelected = document.querySelector('input[name="suitChoice"]:checked').value;
-                        let rankSelected = document.querySelector('input[name="rankChoice"]:checked').value;
 
-                        console.log("making a move??");
+                        // Submitting move logic
+                        const submitMoveBtn = document.createElement("button");
+                        submitMoveBtn.id = "submitMoveBtn";
+                        submitMoveBtn.textContent = "Submit Move";
+                        rankChoiceDiv.after(submitMoveBtn);
 
-                        const payload = {
-                            "method": "requestCard",
-                            "requesterName": name,
-                            "requesteeName": requesteeName,
-                            "gameId": gameId,
-                            "suit": suitSelected,
-                            "rank": rankSelected
-                        }
-                        ws.send(JSON.stringify(payload));
-                    })
+                        submitMoveBtn.addEventListener("click", e => {
+                            // If not already in a game, read text in from box
+                            if (gameStarted === false) {
+                                return;
+                            }
+                            
+                            let requesteeName = document.querySelector('input[name="playerChoice"]:checked').value;
+                            let suitSelected = document.querySelector('input[name="suitChoice"]:checked').value;
+                            let rankSelected = document.querySelector('input[name="rankChoice"]:checked').value;
 
-                        // Board for square game 
-                        while(boardDiv.firstChild) {
-                            boardDiv.removeChild (boardDiv.firstChild)
-                        }
-                        for (let i = 0; i < game.balls; i++){
-                            const b = document.createElement("button");
-                            b.id = "ball" + (i+1);
-                            b.tag = i+1
-                            b.textContent = i+1;
-                            b.style.width = "150px"
-                            b.style.height = "150px"
-                            // Event listener to signal when one player clicks a square
-                            b.addEventListener("click", e => {
-                                let lastPlayer = b.textContent;
-                                b.textContent = playerName;
-                                const payload = {
-                                    "method": "play",
-                                    "clientId": clientId,
-                                    "gameId": gameId,
-                                    "ballId": b.tag,
-                                    "name": playerName
-                                }
-                                ws.send(JSON.stringify(payload))
-                                const payload2 = {
-                                    "method": "requestCard",
-                                    "requesterID": clientId,
-                                    "requesteeName": lastPlayer,
-                                    "gameId": gameId
-                                }
-                                ws.send(JSON.stringify(payload2))
-                            })
-                            boardDiv.appendChild(b);
-                        }    
-                    
-                    
-                    // Update squares lmao 
-                    if (!response.game.state) return;
-                    for(const b of Object.keys(response.game.state))
-                    {
-                        const name = response.game.state[b];
-                        const ballObject = document.getElementById("ball" + b);
-                        ballObject.textContent = name;
+                            console.log("making a move??");
+
+                            const payload = {
+                                "method": "requestCard",
+                                "requesterName": name,
+                                "requesteeName": requesteeName,
+                                "gameId": gameId,
+                                "suit": suitSelected,
+                                "rank": rankSelected
+                            }
+                            ws.send(JSON.stringify(payload));
+                        })   
+                    } else if (game.owner === name) {
+                        // If the owner, prompt the AI moves
+                        const promptMoveBtn = document.createElement("button");
+                        promptMoveBtn.id = "promptMoveBtn";
+                        promptMoveBtn.textContent = "Prompt Next Move";
+                        rankChoiceDiv.after(promptMoveBtn);
+                        // Prompting move logic
+                        promptMoveBtn.addEventListener("click", e => {
+
+                            console.log("making a move for the AI :)");
+
+                            const payload = {
+                                "method": "requestCard",
+                                "requesterName": game.turn,
+                                "requesteeName": undefined,
+                                "gameId": gameId,
+                                "suit": undefined,
+                                "rank": undefined
+                            }
+                            ws.send(JSON.stringify(payload));
+                        })  
                     }
-
-                    // Update client score if applicable
-                    response.game.clients.forEach (c => {
-                        // Set this player's name
-                        if (c.clientId === clientId) scoreTracker.textContent = c.score;
-                    })  
+    
                 }
 
             }

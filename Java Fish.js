@@ -115,27 +115,9 @@ class Player {
         }
    
         this.maybeCards.removeCard(card)
-
-
-        // console.log("TARGET IS"+target.name)
-        
-
-        // console.log("ASKER REQUESTED  CARD"+card.symbol);
-
-        // console.log("has method says"+target.hand.hasCardcard))
-        // console.log("in says"+(card in target.hand))
-        // console.log("contains method says"+target.hand.contains(card))
-        // let contains = false;
-        // let thing = undefined;
-        // for (thing of target.hand) {
-        //     if ((card.rank == thing.rank) && (card.suit == thing.suit)) contains = true;
-        // }
-        // console.log("impov says "+contains)
         
 
         if (target.hand.hasCard(card)) {
-
-            // console.log("TARGET DOES HAVE"+card.symbol);
 
             target.hand.removeCard(card); // TODO was delete not delete
             this.hand.add(card);
@@ -151,7 +133,6 @@ class Player {
 
             return true
         } else {
-            // console.log("TARGET DOESNT HAVE THAT CARD!!!!!")
             target.knownCards.removeCard(card)
             target.maybeCards.removeCard(card)
             return false
