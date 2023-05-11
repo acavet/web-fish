@@ -227,7 +227,7 @@ wsServer.on("request", request => {
             });
 
 
-            // TODO
+            // Alert
             const payload = {
                 "method": "alert",
                 "message": "It is " + nextName + "'s turn to make a move.",
@@ -259,7 +259,6 @@ wsServer.on("request", request => {
 
 // For each game, update the game state and send back to each client 
 function updateGameState(){
-    //{"gameid", fasdfsf} FORMAT TODO 
 
     // Loop through each game
     for (const g of Object.keys(games)) {

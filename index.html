@@ -31,20 +31,22 @@
 
     
     <div id='makeMoveDiv'>
-        <h2>Your turn to make a move</h2>
-        <label for="playerChoiceDiv">Choose an opposing player to ask for a card:</label>
         <div name="playerChoiceDiv" id="playerChoiceDiv"></div>
         <br/>
-        <label for="suitChoiceDiv">Choose a suit:</label>
         <div name="suitChoiceDiv" id="suitChoiceDiv"></div>
         <br/>
-        <label for="rankChoiceDiv">Choose a rank:</label>
         <div name="rankChoiceDiv" id="rankChoiceDiv"></div>
         <br/>
     </div>
 
-    <h2>Gameplay</h2>
+    <h2>Gameplay Log</h2>
     <div id='gameTextDiv'></div>
+
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
     
 
     <script>
@@ -172,20 +174,45 @@
                     while(rankChoiceDiv.firstChild) {
                         rankChoiceDiv.removeChild (rankChoiceDiv.firstChild)
                     }
+                    // TODO make functions for this
                     if (document.contains(document.getElementById("submitMoveBtn"))) {
                         document.getElementById("submitMoveBtn").remove();
                     }
                     if (document.contains(document.getElementById("promptMoveBtn"))) {
                         document.getElementById("promptMoveBtn").remove();
                     }
+                    if (document.contains(document.getElementById("movePromptHeader"))) {
+                        document.getElementById("movePromptHeader").remove();
+                        document.getElementById("suitChoiceLabel").remove();
+                        document.getElementById("playerChoiceLabel").remove();
+                        document.getElementById("rankChoiceLabel").remove();
+                    }
 
 
                     // If it is the current player's turn:
                     // Fill out game move action form with clients, ranks, suits
                     if (game.turn === name) {
+
+                        const movePromptHeader = document.createElement("h2");
+                        movePromptHeader.textContent = "Your turn to make a move";
+                        movePromptHeader.id = "movePromptHeader";
+                        makeMoveDiv.prepend(movePromptHeader);
+                        const playerChoiceLabel = document.createElement("label");
+                        playerChoiceLabel.for = "playerChoiceDiv";
+                        playerChoiceLabel.id = "playerChoiceLabel";
+                        playerChoiceDiv.before(playerChoiceLabel);
+                        const suitChoiceLabel = document.createElement("label");
+                        suitChoiceLabel.for = "suitChoiceDiv";
+                        suitChoiceLabel.id = "suitChoiceLabel";
+                        suitChoiceDiv.before(suitChoiceLabel);
+                        const rankChoiceLabel = document.createElement("label");
+                        rankChoiceLabel.for = "rankChoiceDiv";
+                        rankChoiceLabel.id = "rankChoiceLabel";
+                        rankChoiceDiv.before(rankChoiceLabel);
+
                         for (gamePlayer of game.players) {
-                            console.log(response.partnerOf)
-                            // TODO remove partner etc
+                            // TODO SHOW PARTNER
+                            // TODO WINNING?
                             if (!(gamePlayer === playerName) && !(gamePlayer === response.partners[gamePlayer])) {
                                 const opt = document.createElement("input");
                                 opt.type = "radio";
