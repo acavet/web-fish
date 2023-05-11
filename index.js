@@ -24,7 +24,7 @@ const players = {};
 const games = {};
 
 // Global variables
-const MAX_PLAYERS = 1;
+const MAX_PLAYERS = 2;
 const TOTAL_PLAYERS = 4;
 const fs = require("fs");
 var available_game_names = fs.readFileSync('./fishnames.txt').toString().split("\n");
