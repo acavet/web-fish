@@ -133,7 +133,7 @@
             // Creating game: log game id to console and display
             if (response.method === "create") {
                 gameIdTxt.textContent = response.game.id;
-                console.log("game successfully created with id " + response.game.id + " with " + response.game.balls + " balls")  
+                console.log("game successfully created with id " + response.game.id);  
             }
             
 
@@ -155,8 +155,6 @@
                 if (game.message.length > 0) {
                     gameMessage.textContent = response.game.message;
                 }
-
-                console.log("current turn is "+currentTurn + "or "+response.game.turnNumber)
 
                 // If a turn has happened
                 if (gameStarted && currentTurn != response.game.turnNumber) {

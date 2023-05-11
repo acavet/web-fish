@@ -24,7 +24,7 @@ const players = {};
 const games = {};
 
 // Global variables
-const MAX_PLAYERS = 1;
+const MAX_PLAYERS = 2;
 const TOTAL_PLAYERS = 4;
 const GAME_NAMES = ["Horse", "Pig", "Dog", "Cat", "Parrot", "Iguana"];// TODO 
 
@@ -70,7 +70,6 @@ wsServer.on("request", request => {
             // Add game id and metadata to game dictionary
             games[gameId] = {
                 "id": gameId,
-                "balls": 20,
                 "clients": [],
                 "players": [],
                 "playing": false,
@@ -181,6 +180,7 @@ wsServer.on("request", request => {
             if (requesterPlayer.isComputer) {
                 console.log("requester is AI")
                 requesteePlayer = requesterPlayer.getComputerTarget(games[gameId].players);
+                requesteeName = requesteePlayer.name;
                 requestedCard = requesterPlayer.getComputerCard(requesteePlayer);
             } else { // If not a computer 
                 console.log("requester NOT AI")
@@ -232,13 +232,16 @@ wsServer.on("request", request => {
                 "method": "alert",
                 "message": "It is " + nextName + "'s turn to make a move.",
             }
-            connection.send(JSON.stringify(payload));
+            games[gameId].clients.forEach(c => {
+                clients[c.clientId].connection.send(JSON.stringify(payload))
+            });
             const payload2 = {
                 "method": "alertTurn",
                 "name": nextName
-            }            
-            connection.send(JSON.stringify(payload2));
-            
+            }
+            games[gameId].clients.forEach(c => {
+                clients[c.clientId].connection.send(JSON.stringify(payload2))
+            });                   
             
         }
 
@@ -327,7 +330,9 @@ function startGame(game, connection) {
         "method": "alert",
         "message": "The game has started."
     }
-    connection.send(JSON.stringify(payload));
+    game.clients.forEach(c => {
+        clients[c.clientId].connection.send(JSON.stringify(payload))
+    });
 
     // Begin game update loop 
     updateGameState();
