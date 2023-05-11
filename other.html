@@ -12,38 +12,41 @@
     <h1>Fish Game</h1>
 
     <button onclick = "setUpGame()"> New Game </button>
-
     <div id = "gameContents", hidden = true>
-
-        <br>
-        <p id = "name0"></p>
-        <p id = "name1"></p>
-        <p id = "name2"></p>
-        <p id = "name3"></p>
-
-        <h2 style = "display:inline"> Selected Card: &nbsp; </h2>
-        <select id="rankSelection"></select> 
-        &nbsp; of &nbsp;
-        <select id="suitSelection"></select>
-        &nbsp;
-        <button onclick = "declareSet()", style = "width:120px;"> Declare </button>
-
-        <div id = "askForCardDiv"> 
-            <button onclick = "doNextTurn()", style = "width:120px;"> Ask </button>
+        <div style = "width:50%; float:left">
+            <h id = "name0"></h> <br>
+            <h id = "name1"></h> <br>
+            <h id = "name2"></h> <br>
+            <h id = "name3"></h> <br>
+        
+            <h2 style = "display:inline"> Selected Card: &nbsp; </h2>
+            <select id="rankSelection"></select> 
+            &nbsp; of &nbsp;
+            <select id="suitSelection"></select>
             &nbsp;
-            <select id="playerSelection"></select>
+            <button onclick = "declareSet()", style = "width:120px;"> Declare </button>
+
+            <div id = "askForCardDiv"> 
+                <button onclick = "doNextTurn()", style = "width:120px;"> Ask </button>
+                &nbsp;
+                <select id="playerSelection"></select>
+            </div>
+            
+
+            <div id = "nextTurnDiv">
+                <button onclick = "doNextTurn(players)", style = "width:120px;"> Next Turn </button>
+            </div>
+
+            <div id = "declareSetDiv"> 
+                
+            </div>
+        </div>
+
+        <div style = "height: 500px; overflow: auto; border: 2px solid navy; border-radius: 5px; margin: 0px 100px"> 
+            <table id = "gameLogTable" style = "width: 50%; float:left; margin: 20px">  
+            </table>
         </div>
         
-
-        <div id = "nextTurnDiv">
-            <button onclick = "doNextTurn(players)", style = "width:120px;"> Next Turn </button>
-        </div>
-
-        <div id = "declareSetDiv"> 
-            
-        </div>
-
-
     </div>
 
 </body>
@@ -171,6 +174,7 @@
 <script>
     function setUpGame() {
         document.getElementById("gameContents").hidden = false
+        document.getElementById("gameLogTable").innerHTML = ""
         players = setUpPlayers(["Huit", "Conan", "Ana", "Hasan"], [false, true, true, true])
         currentPlayer = players[0]
         updateCardSelections(players)
@@ -196,22 +200,30 @@
             card = getCard()
         }
 
-        console.log(`${currentPlayer.name}: ${target.name}, do you have the ${card.symbol}?`)
+        const logTable = document.getElementById("gameLogTable")
+        let row = logTable.insertRow(0);
+        
+
         result = currentPlayer.askForCard(target, card, players)
+
+        if (result != null) {
+            row.innerHTML = `${currentPlayer.name}: ${target.name}, do you have the ${card.symbol}? <br>`
+        } else {
+            alert("You can't ask for that card")
+        }
 
         updateHands(players)
 
+        
+        row = logTable.insertRow(1);
+
         if (result == false) {
-            console.log(`${target.name}: no.`)
+            row.innerHTML = `${target.name}: no. <br><br>`
             currentPlayer = target
         } else if (result == true) {
-            console.log(`${target.name}: yes.`)
-        } else if (result == null) {
-            // print("You can't ask for that card!")
+            row.innerHTML = `${target.name}: yes. <br><br>`
         }
-
         updateVisibleButtons()
-
     }
 
 </script>

@@ -34,6 +34,7 @@ button {
     display: inline-block;
     transition-duration: 0.2s;
     cursor: pointer;
+    height: 40px;
 }
 
 button:hover {
@@ -64,7 +65,6 @@ input[type="radio"] {
 }
 
 select{
-    width: 200px;
     height: 40px;
     border: 2px solid navy;
     border-radius: 5px;

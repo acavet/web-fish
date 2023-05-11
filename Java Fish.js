@@ -377,17 +377,17 @@ function runGame() {
 // runGame()
 
 
-// module.exports = {
-//     Card,
-//     shuffle,
-//     makeNewDeck,
-//     Player,
-//     getCardInput,
-//     getTargetInput,
-//     doTurn,
-//     gameIsOver,
-//     setUpPlayers,
-//     dealCards,
-//     printStatus,
-//     test
-// }
+module.exports = {
+    Card,
+    shuffle,
+    makeNewDeck,
+    Player,
+    getCardInput,
+    getTargetInput,
+    doTurn,
+    gameIsOver,
+    setUpPlayers,
+    dealCards,
+    printStatus,
+    test
+}
