@@ -8,67 +8,31 @@
     <title>Document</title>
 </head>
 
-<style>
-    .card {
-        float:left;
-        color:black;
-        height: 140px; 
-        aspect-ratio: 2.5/3.5;
-        background: cornsilk;
-        padding: 5px;
-        border: 2px solid navy;
-        border-radius: 5px;
-        font-size: 20pt;
-        position: relative;
-        margin-right: -60px;
-    }
-
-    .field {
-        height: 100%; 
-        background: rgba(0, 0, 128, 0.5);
-        border: 2px solid navy;
-        border-radius: 5px;
-        color:wheat;
-        font-size: 16pt;
-        display: flex; 
-        justify-content: space-between; 
-        flex-grow:2;
-        position: relative
-    }
-
-    .gameFlexBox {
-        width: 100%;
-        margin: 50px;
-        margin-bottom: 10px;
-        display:flex; 
-        justify-content: space-between; 
-        flex-direction:column;
-        align-items:center;
-        gap: 10px;
-    }
-
-    .gameLog {
-        height: 70vh; 
-        width: fit-content; 
-        overflow: auto; 
-        float: right; 
-        border: 2px solid navy;
-        border-radius: 5px;
-        background: rgba(255, 255, 255, 0.25);
-    }
-
-
-</style>
-
 <body>
     <h1>Fish Game</h1>
 
-    <button onclick = "setUpGame()"> New Game </button>
+    <!-- <button> New Game </button> [Generated ID here]
+    <br>
+    <button> Join Game </button> <input placeholder = "Game ID">
+    <br>
+    <ul>
+        <li> player1 </li>
+        <li> player2 </li>
+    </ul>
+     -->
+
+    <button onclick = "setUpGame()"> Start Game </button>
+
+
+    <!-- all game contents, hidden until game starts -->
     <div id = "gameContents", style = "height: 70vh; display:none; justify-content:space-between;">
+        <!-- cards, players, etc. -->
         <div id = "playingField", class = "field">
             <div, class = "gameFlexBox">
+
                 <button onclick = "declareSet()", id = "name2", class = "name"> </button>
-                <div style = "display:flex; justify-content:space-between; align-items:center; width:100%; flex-grow:2">
+                
+                <div id = "middleRow" style = "display:flex; justify-content:space-between; align-items:center; width:100%; flex-grow:2">
                     <button onclick = "doNextTurn(this)", id = "name1", class = "name"></button>
                     <button onclick = "doNextTurn(this)", id = "name3", class = "name"></button>
                 </div>
@@ -82,13 +46,12 @@
                 <div id = "name0" style = "display:flex; justify-content:center; width:100%; overflow:scroll"> </div>
             </div>
 
+            <!-- log of interactions -->
             <div class = "gameLog"> 
-                <table id = "gameLogTable", style = "width:fit-content"> </table>
+                <table id = "gameLogTable", style = "width: 100%; font-size: 16px"> </table>
             </div>
         </div>
 
-        
-        
     </div>
 </body>
 
@@ -258,5 +221,23 @@
         const card = getCard()
         players[0].declareSet(card, players)
         updateHands(players)
+
+        let name3 = document.getElementById("name3")
+
+        let middleDiv = document.getElementById("middleRow")
+        let setDiv = document.createElement("div")
+        setDiv.style = "position:relative; display:grid; align-items: center; justify-content: center"
+
+        for (const c of card.set) {
+            let cardDiv = document.createElement("div")
+            cardDiv.classList.add("smallCard")
+            const rotateAmount = -15 + Math.floor(Math.random() * 30)
+            cardDiv.style.transform = `rotate(${rotateAmount}deg)`
+            cardDiv.innerText = c.symbol
+            setDiv.appendChild(cardDiv)
+        }
+
+        middleDiv.insertBefore(setDiv, name3)
+
     }
 </script>

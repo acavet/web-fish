@@ -42,6 +42,20 @@ class Card {
         }
     }
 
+    get set() {
+
+        let set = []
+
+        for (const card of makeNewDeck()) {
+            if (card.isInSameSetAs(this)) {
+                set.push(card)
+            }
+        }
+
+        return set
+
+    }
+
     equals(other) {
         return this.rank == other.rank && this.suit == other.suit
     }

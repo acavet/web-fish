@@ -103,3 +103,63 @@ td {
     border-radius: 5px; 
     padding: 10px;
 }
+
+.card {
+    float:left;
+    color:black;
+    height: 140px; 
+    aspect-ratio: 2.5/3.5;
+    background: cornsilk;
+    padding: 5px;
+    border: 2px solid navy;
+    border-radius: 5px;
+    font-size: 20pt;
+    position: relative;
+    margin-right: -60px;
+}
+.smallCard { /* For set stacks */
+    color:black;
+    height: 100px; 
+    width: 70px;
+    /* aspect-ratio: 5/7; */
+    background: cornsilk;
+    padding: 5px;
+    border: 2px solid navy;
+    border-radius: 5px;
+    font-size: 20pt;
+    position: absolute;
+}
+
+.field {
+    height: 100%; 
+    background: rgba(0, 0, 128, 0.5);
+    border: 2px solid navy;
+    border-radius: 5px;
+    color:wheat;
+    font-size: 16pt;
+    display: flex; 
+    justify-content: space-between; 
+    flex-grow:2;
+    position: relative
+}
+
+.gameFlexBox {
+    width: 100%;
+    margin: 50px;
+    margin-bottom: 10px;
+    display:flex; 
+    justify-content: space-between; 
+    flex-direction:column;
+    align-items:center;
+    gap: 10px;
+}
+
+.gameLog {
+    height: 70vh; 
+    width: 10%; 
+    overflow: auto; 
+    float: right; 
+    border: 2px solid navy;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.5);
+}

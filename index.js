@@ -53,6 +53,7 @@ const replacerFunc = () => {
 const wsServer = new websocketServer({
     "httpServer": httpServer
 })
+
 wsServer.on("request", request => {
     // Accept client request to open or close connection
     const connection = request.accept(null, request.origin);
