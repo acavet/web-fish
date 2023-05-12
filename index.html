@@ -275,16 +275,13 @@
                             ws.send(JSON.stringify(payload));
                         })   
                     } else if (game.owner === name) {
-                        // If the owner, prompt the AI moves
+                        // If the owner, you have a button to prompt the AI moves
                         const promptMoveBtn = document.createElement("button");
                         promptMoveBtn.id = "promptMoveBtn";
                         promptMoveBtn.textContent = "Prompt Next Move";
                         rankChoiceDiv.after(promptMoveBtn);
-                        // Prompting move logic
                         promptMoveBtn.addEventListener("click", e => {
-
                             console.log("making a move for the AI :)");
-
                             const payload = {
                                 "method": "requestCard",
                                 "requesterName": game.turn,
@@ -306,22 +303,25 @@
                 const game = response.game;
 
                 // Remove all players from list 
-                while(divPlayers.firstChild)
+                while(divPlayers.firstChild) {
                     divPlayers.removeChild (divPlayers.firstChild)
+                }
 
-                // Redo player list
-                game.players.forEach (pname => {
-                    const d = document.createElement("div");
-                    d.style.width = "200px";
-                    // d.style.background = c.name;
-                    d.textContent = pname;
-                    divPlayers.appendChild(d);
-                })
-
+                let playerList = game.clients.map(function (client) { return client.name });
+                
                 // If game starting 
                 if (game.playing) {
                     gameStarted = true;
+                    playerList = game.players;
                 }
+
+                // Redo player list
+                playerList.forEach (p => {
+                    const d = document.createElement("div");
+                    d.style.width = "200px";
+                    d.textContent = p;
+                    divPlayers.appendChild(d);
+                })
 
             }
         }

@@ -1,5 +1,6 @@
 // TODO add documentation
 
+// Fish game code 
 const jf = require('./Java Fish.js');
 let express = require('express');
 
@@ -7,12 +8,12 @@ let express = require('express');
 const http = require("http");
 const { client } = require("websocket");
 const app = require("express")();
-app.get("/", (req,res)=> res.sendFile(__dirname + "/index.html"))
+app.get("/", (req,res) => res.sendFile(__dirname + "/index.html"))
 app.use(express.static(__dirname + '/'));
 
 // Host on port 9090
 // Listen on port 9091, so to text go to localhost:9091
-app.listen(9091, ()=>console.log("Listening on http port 9091"))
+app.listen(9091, () => console.log("Listening on http port 9091"))
 const websocketServer = require("websocket").server
 const httpServer = http.createServer();
 httpServer.listen(9090, () => console.log("Listening.. on 9090"))
@@ -31,7 +32,7 @@ var available_game_names = fs.readFileSync('./fishnames.txt').toString().split("
 
 // Helper function to avoid player circles
 const replacerFunc = () => {
-    const visited = new WeakSet();
+    // const visited = new WeakSet();
     return (key, value) => {
         // if (key === undefined || value === undefined) {
         //     return "";
@@ -104,9 +105,15 @@ wsServer.on("request", request => {
             const gameId = result.gameId;
             const game = games[gameId];
 
-            // TODO check if game id is valid
-            // TODO custom game ids 
-
+            // Check if game id is valid
+            if (game === undefined) {
+                const payload = {
+                    "method": "alert",
+                    "message": "Sorry, this game doesn't!"
+                }
+                connection.send(JSON.stringify(payload));
+                return;
+            }
 
             // Have we reached the max number of players?
             if (game.clients.length >= MAX_PLAYERS) 
@@ -118,12 +125,14 @@ wsServer.on("request", request => {
                 connection.send(JSON.stringify(payload));
                 return;
             }
-    
+            
+            // Add client to game 
             game.clients.push({
                 "clientId": clientId,
                 "name": name,
                 "score": 5
             })
+
             // Start the game once we reach XXX players
             // TODO make it so we don't need max players
             if (game.clients.length === MAX_PLAYERS) {
@@ -140,28 +149,12 @@ wsServer.on("request", request => {
             })
         }
 
-        // A user makes a move TODO delete
-        if (result.method === "play") {
-            console.log("PLAYING A MOVE");
-            const gameId = result.gameId;
-            const ballId = result.ballId;
-            const name = result.name;
-            let state = games[gameId].state;
-            if (!state)
-                state = {}
-            state[ballId] = name;
-            games[gameId].state = state;
-        }
-
         // A user requests another player for a card TODO 
         if (result.method === "requestCard") {
 
-            
             const gameId = result.gameId;
             let requesterName = result.requesterName;
-            let requesteeName = result.requesteeName;
-
-            // Carry out human player's turn
+            let requesteeName = result.requesteeName; // undefined if AI is taking turn
             let requesterPlayer = undefined;
             let requesteePlayer = undefined;
             let requestedCard = undefined;
@@ -175,7 +168,6 @@ wsServer.on("request", request => {
                     requesterPlayer = player;
                 }
             }
-
 
             // Case on if the requester is an AI
             if (requesterPlayer.isComputer) {
@@ -202,11 +194,9 @@ wsServer.on("request", request => {
                 nextPlayer = requesteePlayer;
             }
 
-            // Change turns
+            // Change turns and update turn #
             let nextName = nextPlayer.name;
             games[gameId].turn = nextName;
-
-            // Update turn # 
             games[gameId].turnNumber += 1;
 
             // Update players on what turn happened
@@ -215,7 +205,7 @@ wsServer.on("request", request => {
             let successText = " and was " + (goodAsk ? " " : "not ") + "successful, so the next player is " + nextPlayer.name;
 
             
-
+            // Text to log 
             let fishText = requestText + successText
             console.log(fishText)
             const payload3 = {
@@ -227,7 +217,7 @@ wsServer.on("request", request => {
             });
 
 
-            // Alert
+            // Alert about next turn 
             const payload = {
                 "method": "alert",
                 "message": "It is " + nextName + "'s turn to make a move.",
@@ -289,7 +279,7 @@ function startGame(game, connection) {
     game.playing = true;
     game.turnNumber += 1;
 
-    // Set game owner
+    // Set game owner (game creator if applicable, otherwise first non-AI player to join)
     let owner = game.clients[0].name;
     for (clientDict of game.clients) {
         if (clientDict.clientId === game.starterClientId) {
@@ -299,13 +289,15 @@ function startGame(game, connection) {
     game.owner = owner;
     console.log("GAME OWNER "+owner)
 
-    // Get irl player names here
+    // Get non-AI player names
     let names = game.clients.map(function (client) { return client.name });
 
-    // Add comedian names TODO jank temp logic
+    // Add AI names TODO jank temp logic
     const numberNotAi = names.length;
     while (names.length < 4) {
-        names.push("amyNumber"+names.length);
+        const fishName = available_game_names.splice(Math.floor(Math.random()*available_game_names.length), 1);
+        names.push(fishName);
+        //names.push("amyNumber"+names.length);
     }
     var aiBools = [];
     for (i = 0; i < TOTAL_PLAYERS; i++) {
@@ -316,6 +308,8 @@ function startGame(game, connection) {
         aiBools.push(b);
     }
     console.log("AI bools" + aiBools)
+
+    // Set up players
     game.players = jf.setUpPlayers(names, aiBools);
 
     // Deal cards
@@ -325,7 +319,7 @@ function startGame(game, connection) {
     const firstPlayer = game.players[Math.floor(Math.random()*game.players.length)];
     game.turn = firstPlayer.name;
 
-    // Signal start of game and start updating game state
+    // Signal start of game
     const payload = {
         "method": "alert",
         "message": "The game has started."
@@ -338,11 +332,7 @@ function startGame(game, connection) {
     updateGameState();
 }
 
-
-
-
-
-// TODO game id generation--just have string codes eventually? 
+// Random game id generation helpers
 function S4() {
     return (((1+Math.random())*0x10000)|0).toString(16).substring(1); 
 }
