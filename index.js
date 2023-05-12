@@ -25,7 +25,7 @@ const players = {};
 const games = {};
 
 // Global variables
-const MAX_PLAYERS = 2;
+const MAX_PLAYERS = 4;
 const TOTAL_PLAYERS = 4;
 const fs = require("fs");
 var available_game_names = fs.readFileSync('./fishnames.txt').toString().split("\n");
@@ -141,7 +141,20 @@ wsServer.on("request", request => {
 
             // Inform each client of the game status
             const payload = {
-                "method": "join",
+                "method": "joinOrStart",
+                "game": game
+            }
+            game.clients.forEach(c => {
+                clients[c.clientId].connection.send(JSON.stringify(payload, replacerFunc()))
+            })
+        }
+
+        // If we start game manually via start game button 
+        if (result.method === "startGame") {
+            let game = games[result.gameId];
+            startGame(game, connection);
+            const payload = {
+                "method": "joinOrStart",
                 "game": game
             }
             game.clients.forEach(c => {
@@ -294,7 +307,7 @@ function startGame(game, connection) {
 
     // Add AI names TODO jank temp logic
     const numberNotAi = names.length;
-    while (names.length < 4) {
+    while (names.length < TOTAL_PLAYERS) {
         const fishName = available_game_names.splice(Math.floor(Math.random()*available_game_names.length), 1);
         names.push(fishName);
         //names.push("amyNumber"+names.length);
