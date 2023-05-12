@@ -43,10 +43,9 @@ class Card {
     }
 
     get set() {
-
         let set = []
 
-        for (const card of makeNewDeck()) {
+        for (const card of deck) {
             if (card.isInSameSetAs(this)) {
                 set.push(card)
             }
@@ -58,21 +57,6 @@ class Card {
 
     equals(other) {
         return this.rank == other.rank && this.suit == other.suit
-    }
-}
-
-Set.prototype.hasCard = function(item) {
-
-    for (let thing of this) {
-        if (thing.equals(item)) return true
-    }
-    return false
-}
-
-Set.prototype.removeCard = function(item) {
-
-    for (let thing of this) {
-        if (thing.equals(item)) this.delete(thing)
     }
 }
 
@@ -97,24 +81,37 @@ function makeNewDeck() {
 
     for (let rank = 2; rank < 15; rank ++) {
         for (let suit = 0; suit < 4; suit ++)  {
-            deck.push(new Card(rank, suit))
+            const c = new Card(rank, suit)
+            deck.push(c)
         }
     }
 
     return deck
 }
+
+const CardStatus = {
+    inHand: "inHand",
+    maybe: "maybe",
+    unknown: "unknown",
+    unlikely: "unlikely",
+    notInHand: "notInHand"
+}
+
+const deck = makeNewDeck()
     
 class Player {
     points = 0;
     opponents = [];
+    cardStatusDictionary = {};
     isComputer;
 
     constructor(name) {
         this.name = name
         this.hand = new Set()
-        this.knownCards = new Set()
-        this.maybeCards = new Set()
-        this.notCards = new Set()
+        
+        for (const card of deck) {
+            this.cardStatusDictionary[card.symbol]= CardStatus.unknown
+        }
     }
 
     canAskForCard(card) {
@@ -126,13 +123,25 @@ class Player {
 
     get allowedAskingCards() {
         let cards = []
-        for (const c of makeNewDeck()) {
+        for (const c of deck) {
             if (this.canAskForCard(c)) {
                 cards.push(c)
             }
         }
 
         return cards
+    }
+
+    get sortedHand() {
+
+        let sortedHand = Array.from(this.hand)
+
+        sortedHand.sort( function(a, b) {
+            if (a.suit == b.suit) return a.rank - b.rank
+            else return a.suit - b.suit;
+        });
+
+       return sortedHand
     }
 
     // Returns true if legal ask
@@ -144,163 +153,134 @@ class Player {
             return null
         }
 
-        for (const c of makeNewDeck()) {
-            if (c.isInSameSetAs(card)) this.maybeCards.add(c)
+        for (const c of card.set) {
+            if (this.cardStatusDictionary[c.symbol] == CardStatus.unknown) {
+                this.cardStatusDictionary[c.symbol] = CardStatus.maybe
+            }
         }
-   
-        if (target.hand.hasCard(card)) {
 
-            target.hand.removeCard(card);
+        if (target.hand.has(card)) {
+
+            target.hand.delete(card);
             this.hand.add(card);
 
             // No one else has it
             for (const player of players) {
-                player.knownCards.removeCard(card)
-                player.maybeCards.removeCard(card)
-                player.notCards.add(card)
+                player.cardStatusDictionary[card.symbol] = CardStatus.notInHand
             }
 
             // The asking player has the card
-            this.knownCards.add(card)
-            this.maybeCards.removeCard(card)
-            this.notCards.removeCard(card)
+            this.cardStatusDictionary[card.symbol] = CardStatus.inHand
 
             return true
         } else {
-            target.knownCards.removeCard(card)
-            target.maybeCards.removeCard(card)
-            target.notCards.add(card)
+            target.cardStatusDictionary[card.symbol] = CardStatus.notInHand
+            this.cardStatusDictionary[card.symbol] = CardStatus.unlikely
             return false
         }
     }
 
     declareSet(card, players) {
         let goodDeclaration = true
-        // Go through all cards of deck
 
-        for (const c of makeNewDeck()) {
-            if (c.isInSameSetAs(card)) {
-                if (this.hand.hasCard(c)) {
-                    this.hand.removeCard(c)
-                } else if (this.partner.hand.hasCard(c)) {
-                    this.partner.hand.removeCard(c)
-                } else {
-                    goodDeclaration = false
-                }
+        // Go through all cards of deck
+        for (const c of card.set) {
+            if (this.hand.has(c)) {
+                this.hand.delete(c)
+            } else if (this.partner.hand.has(c)) {
+                this.partner.hand.delete(c)
+            } else {
+                goodDeclaration = false
             }
         }
-        // print("%s declares the set with the %s, " % (this.name, card.getName()), end = "")
 
         if (goodDeclaration) {
             this.points += 1
-            console.log("and they are successful.")
         } else {
             this.opponents[0].points += 1
-            console.log("but they are unsuccessful.")
-            for (const c of makeNewDeck()) {
-                if (c.isInSameSetAs(card)) {
-                    for (let player of players) player.hand.removeCard(c)
-                }   
+            for (const c of card.set) {
+                for (let player of players) player.hand.delete(c)
             }
         }
         
         return
 
-      
     }
 
     getComputerCard(target) {
 
-        for (const targetCard of target.knownCards) {
-            for (const card of this.hand) {
-                if (card.isInSameSetAs(targetCard)) {
-                    return targetCard
-                }
-            }
-        }
+        // Possible choices — cards you can ask for, and that you don't have
+        const askingCards = this.allowedAskingCards.filter(x => !this.hand.has(x))
 
-        const choice = Math.floor(Math.random()*2)
+        // Ask for all cards you know they have
+        for (const card of askingCards) {
 
-        if (choice == 0) {
-            for (const targetCard of target.maybeCards) {
-                if (this.hand.hasCard(targetCard)) {
-                    continue
-                }
-                for (const card of this.hand) {
-                    if (card.isInSameSetAs(targetCard)) {
-                        console.log(card)
-                        console.log("this one")
-                        return targetCard
-                    }
-                }
-            }
-        }
-        
-        for (const card of this.allowedAskingCards) {
-            if (!(this.hand.hasCard(card)) && !(target.notCards.hasCard(card))) {
-                console.log(card)
-                console.log("no this")
+            if (target.cardStatusDictionary[card.symbol] == CardStatus.inHand) {
                 return card
             }
         }
-    
+
+
+        const choice = Math.floor(Math.random() * 2)
+
+        // Ask for cards they might have
+        if (choice == 0) {
+            for (const card of askingCards) {
+                if (target.cardStatusDictionary[card.symbol] == CardStatus.maybe) {
+                    return card
+                }
+            }
+        }
+
+
+        // Ask for random cards
+        for (const card of askingCards) {
+            if (target.cardStatusDictionary[card.symbol] == CardStatus.unknown) {
+                return card
+            }
+        }
+        
     }
     
     getComputerTarget(players) {
-        if (this == players[0] || this == players[2]) {
-            return players[1 + 2 * Math.floor(2 * Math.random())]
+        if (this.opponents[0].hand.size == 0) {
+            return this.opponents[1]
+        } else if (this.opponents[1].hand.size == 0) {
+            return this.opponents[0]
         } else {
-            return players[2 * Math.floor(2 * Math.random())]
+            return this.opponents[Math.floor(2 * Math.random())]
+        }
+    }
+
+    tryComputerDeclare(players) {
+
+        let i = 0;
+        while (i < this.sortedHand.length) {
+            const card = this.sortedHand[i]
+
+            let shouldDeclare = true
+            for (const c of card.set) {
+
+                if (!(this.hand.has(c) || this.partner.cardStatusDictionary[c.symbol] == CardStatus.inHand ||
+                (this.opponents[0].cardStatusDictionary[c.symbol] == CardStatus.notInHand && 
+                    this.opponents[1].cardStatusDictionary[c.symbol] == CardStatus.notInHand))) {
+                    
+                    shouldDeclare = false
+                    break
+                }
+            }
+
+            if (shouldDeclare) {
+                this.declareSet(card, players)
+            } else {
+                i += 1
+            }
         }
     }
 }
 
-function getCardInput() {
-    rank = 2 + Math.floor(13*Math.random())
-    suit = Math.floor(4*Math.random())
 
-    return new Card(rank, suit)
-}
 
-function getTargetInput(players) {
-    const i = 1 + Math.floor(2*Math.random())
-    return players[i]
-}
-
-function doTurn(currentPlayer, players) {
-
-    let target = null
-    let card = null
-
-    if (currentPlayer.isComputer) {
-        target = currentPlayer.getComputerTarget(players)
-        card = currentPlayer.getComputerCard(target)
-        tryComputerDeclare(currentPlayer, players)
-
-    } else {
-        target = getTargetInput(players)
-        card = getCardInput()
-    
-        if (target == null) {
-            currentPlayer.declareSet(card, players)
-            return currentPlayer
-        }
-    }
-
-    console.log(`${currentPlayer.name}: ${target.name}, do you have the ${card.symbol}?`)
-    result = currentPlayer.askForCard(target, card, players)
-
-    if (result == false) {
-        console.log(`${target.name}: no.`)
-        return target
-    } else if (result == true) {
-        console.log(`${target.name}: yes.`)
-        return currentPlayer
-    } else if (result == null) {
-        // print("You can't ask for that card!")
-        return currentPlayer
-    }
-}
 
 function gameIsOver(players) {
     for (const player of players) {
@@ -319,7 +299,7 @@ function setUpPlayers(nameList, isComputerList) {
 
     let players = [player1, player2, player3, player4]
 
-    for (let i in players) {
+    for (let i = 0; i < players.length; i++) {
         players[i].partner = players[(i+2) % 4]
 
         players[i].opponents.push(players[(i+1) % 4])
@@ -330,51 +310,14 @@ function setUpPlayers(nameList, isComputerList) {
     return players
 }
 
+
+
 function dealCards(players) {
-    const deck = makeNewDeck()
     shuffle(deck)
 
-    for (let _ = 0; _ < 13; _ ++) {
-        for (const player of players) {
-            player.hand.add(deck.pop())
-        }
+    for (let i = 0; i < 52; i ++) {
+        players[i%4].hand.add(deck[i])
     }
-}
-
-function printStatus(currentPlayer, players) { 
-    console.log("Your hand:")
-
-    for (const player of players) {
-        console.log(player.name+":")
-        let sortedHand = Array.from(player.hand)
-
-        sortedHand.sort( function(a, b) {
-            if (a.suit == b.suit) return a.rank - b.rank
-            else return a.suit - b.suit;
-        });
-
-        for (let i = 0; i < sortedHand.length; i++) {
-
-            process.stdout.write(sortedHand[i].symbol)
-
-            if (i < sortedHand.length -1 && sortedHand[i+1].suit != sortedHand[i].suit) {
-                console.log()
-            } else if (i == sortedHand.length - 1) {
-                console.log()
-                console.log()
-            } else {
-                console.log(", ")
-            }
-        }
-    }
-
-    // for (let i = 1; i < 4; i++) {
-    //     console.log(players[i].name, "has", players[i].hand.size, "cards")
-    // }
-
-    console.log()
-    console.log("Up next:", currentPlayer.name)
-
 }
 
 function findNextPlayer(goal) {
@@ -387,32 +330,7 @@ function findNextPlayer(goal) {
 
 }
 
-function test() {
-    console.log("Test successful");
-}
 
-function runGame() {
-
-    let players = setUpPlayers(["Huit", "Conan", "Ana", "Hasan"], [true, true, true, true])
-    dealCards(players)
-
-    console.log(players[0].hand.size)
-    let currentPlayer = players[0]
-
-    // while (!gameIsOver(players)) {
-    for (_ = 0; _ < 10; _ ++) {
-        console.log("---------------")
-
-        printStatus(currentPlayer, players)
-        let nextPlayer = doTurn(currentPlayer, players)
-
-        console.log("---------------")
-        currentPlayer = nextPlayer
-    }
-      
-    return
-
-}
 
 // runGame()
 

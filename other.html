@@ -25,7 +25,7 @@
 
 
     <!-- all game contents, hidden until game starts -->
-    <div id = "gameContents", style = "height: 70vh; display:none; justify-content:space-between;">
+    <div id = "gameContents", style = "height: 80vh; display:none; justify-content:space-between;">
         <!-- cards, players, etc. -->
         <div id = "playingField", class = "field">
             <div, class = "gameFlexBox">
@@ -49,12 +49,11 @@
                 <div id = "name0" style = "display:flex; justify-content:center; width:100%; overflow:scroll"> </div>
             </div>
 
-            <!-- log of interactions -->
+             <!-- log of interactions -->
             <div class = "gameLog"> 
                 <table id = "gameLogTable", style = "width: 100%; font-size: 16px"> </table>
             </div>
         </div>
-
     </div>
 </body>
 
@@ -106,22 +105,15 @@
                 name.innerHTML = player.name
                 continue
             }
-
-            let sortedHand = Array.from(player.hand)
-
-            sortedHand.sort( function(a, b) {
-                if (a.suit == b.suit) return a.rank - b.rank
-                else return a.suit - b.suit;
-            });
-
-            for (let i = 0; i < sortedHand.length; i++) {
+            
+            for (let i = 0; i < player.sortedHand.length; i++) {
 
                 let card = document.createElement("div")
                 card.className = "card"
-                card.innerText = sortedHand[i].symbol
+                card.innerText = player.sortedHand[i].symbol
                 name.appendChild(card)
 
-                if (i == sortedHand.length-1) {
+                if (i == player.sortedHand.length-1) {
                     card.style.margin = "0px";
                 }
             }
@@ -156,7 +148,14 @@
     function getCard() {
         let rank = document.getElementById("rankSelection").selectedIndex + 2
         let suit = document.getElementById("suitSelection").selectedIndex
-        return new Card(rank, suit)
+
+        const theCard = new Card(rank, suit)
+
+        for (const card of deck) {
+            if (card.equals(theCard)) return card
+        }
+
+        assert(false)
     }
 
 </script>
@@ -182,9 +181,9 @@
         let card = null
 
         if (currentPlayer.isComputer) {
+            currentPlayer.tryComputerDeclare(players)
             target = currentPlayer.getComputerTarget(players)
             card = currentPlayer.getComputerCard(target)
-            // tryComputerDeclare(currentPlayer, players)
         } else {
             target = getTarget(button.textContent)
             card = getCard()
