@@ -34,12 +34,15 @@
                 
                 <div id = "middleRow" style = "display:flex; justify-content:space-between; align-items:center; width:100%; flex-grow:2">
                     <button onclick = "doNextTurn(this)", id = "name1", class = "name"></button>
+                    <div id = "setsDiv", style = "display:flex; justify-content:space-around; gap: 10px"> </div>
                     <button onclick = "doNextTurn(this)", id = "name3", class = "name"></button>
                 </div>
                 Selected Card:
                 <div style = height: fit-content>
                     <select id="rankSelection"></select> &nbsp; of &nbsp; <select id="suitSelection"></select>
                 </div>
+
+                <p id = "scoreBoard", style="height: fit-content; position: absolute; top: 10px; left: 10px; margin: 0px"> Score: 0 - 0 </p>
 
                 <button id="nextTurnButton" onclick = "doNextTurn(players)", style = "height: fit-content; position: absolute; top: 10px; right: 10px"> Next Turn </button>
             
@@ -187,29 +190,29 @@
             card = getCard()
         }
 
+       
+        result = currentPlayer.askForCard(target, card, players)
+
+        if (result == null) {
+            currentPlayer = findNextPlayer(currentPlayer)
+            return
+        }
+
         const logTable = document.getElementById("gameLogTable")
         let row = logTable.insertRow(0);
         let cell = row.insertCell(0)
+        cell.innerHTML = `<b>${currentPlayer.name}:</b> ${card.symbol}? <br>`
         
-
-        result = currentPlayer.askForCard(target, card, players)
-
-        if (result != null) {
-            cell.innerHTML = `<b>${currentPlayer.name}:</b> ${card.symbol}? <br>`
-        } else {
-            alert("You can't ask for that card")
-            return
-        }
 
         updateHands(players)
         cell.innerHTML += `<b>${target.name}: <b>`
 
         if (result == false) {
             cell.innerHTML += "no."
-            currentPlayer = target
+            currentPlayer = findNextPlayer(target)
         } else if (result == true) {
             cell.innerHTML += "yes."
-
+            currentPlayer = findNextPlayer(currentPlayer)
         }
         updateVisibleButtons()
     }
@@ -224,9 +227,9 @@
 
         let name3 = document.getElementById("name3")
 
-        let middleDiv = document.getElementById("middleRow")
+        let setsDiv = document.getElementById("setsDiv")
         let setDiv = document.createElement("div")
-        setDiv.style = "position:relative; display:grid; align-items: center; justify-content: center"
+        setDiv.style = "position:relative; width: 100px; height: 100px"
 
         for (const c of card.set) {
             let cardDiv = document.createElement("div")
@@ -237,7 +240,8 @@
             setDiv.appendChild(cardDiv)
         }
 
-        middleDiv.insertBefore(setDiv, name3)
+        setsDiv.appendChild(setDiv)
 
+        document.getElementById("scoreBoard").textContent = `Score: ${players[0].points + players[2].points} - ${players[1].points + players[3].points}`
     }
 </script>

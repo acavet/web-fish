@@ -127,7 +127,7 @@ td {
     border: 2px solid navy;
     border-radius: 5px;
     font-size: 20pt;
-    position: absolute;
+    position: fixed;
 }
 
 .field {
