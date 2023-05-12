@@ -21,6 +21,13 @@ class Card {
         return rankString + suitString
     }
 
+    get name() {
+        const rankString = Card.ranks[this.rank]
+        const suitString = Card.suits[this.suit]
+
+        return rankString + " of " + suitString
+    }
+
     isInSameSetAs(other) {
         if (this.rank == 8) {
             if (other.rank == 8) return true

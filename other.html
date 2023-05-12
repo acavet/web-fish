@@ -24,22 +24,39 @@
     }
 
     .field {
-        float: left; 
-        width: 70%; 
         height: 100%; 
         background: rgba(0, 0, 128, 0.5);
         border: 2px solid navy;
         border-radius: 5px;
+        color:wheat;
+        font-size: 16pt;
+        display: flex; 
+        justify-content: space-between; 
+        flex-grow:2;
+        position: relative
     }
+
+    .gameFlexBox {
+        width: 100%;
+        margin: 50px;
+        margin-bottom: 10px;
+        display:flex; 
+        justify-content: space-between; 
+        flex-direction:column;
+        align-items:center;
+        gap: 10px;
+    }
+
     .gameLog {
         height: 70vh; 
-        width: 25%; 
+        width: fit-content; 
         overflow: auto; 
-        border: 2px solid navy; 
-        border-radius: 5px; 
         float: right; 
+        border: 2px solid navy;
+        border-radius: 5px;
         background: rgba(255, 255, 255, 0.25);
     }
+
 
 </style>
 
@@ -47,49 +64,32 @@
     <h1>Fish Game</h1>
 
     <button onclick = "setUpGame()"> New Game </button>
-    <div id = "gameContents", hidden = 'true', style = "height: 70vh">
+    <div id = "gameContents", style = "height: 70vh; display:none; justify-content:space-between;">
         <div id = "playingField", class = "field">
-            <table style = "width:90%; height: 90%; margin: auto; margin-top: 20px">
-                <tr style = "height: 15%"> 
-                    <td> <button id = "name2", class = "name"> </button> </td>
-                </tr>
-                <tr style = "width:100%; height: 15%">  
-                    <td style = "float:left"><button onclick = "doNextTurn(this)" id = "name1", class = "name"> </button> </td>
-                    <td style = "float:right"><button onclick = "doNextTurn(this)" id = "name3", class = "name"> </button> </td>
-                </tr>
-                <tr style = "clear: both; height: 35%">
-                    <td>
-                        <h2 style = "margin:auto; width:fit-content; color:wheat"> Selected Card </h2> <br>
-                   
-                        <select id="rankSelection"></select> 
-                        &nbsp; of &nbsp;
-                        <select id="suitSelection"></select>
-                        <br>
-    
-                        <div id = "nextTurnButton", hidden = "hidden", style = "margin:auto; width:fit-content">
-                            <button onclick = "doNextTurn(players)", style = "width:120px"> Next Turn </button>
-                        </div>
-                    </td>
-                <tr style = 'height: 25%'>  
-                    <td>
-                        <div style = "display:block; width:fit-content; overflow-x:scroll; overflow-y:hidden height: 100%">
-                            <div id = "name0" style = "display:table; height:100%"> </div>
-                        </div>
-                    </td>
-                </tr>
-                   
-            </table>
+            <div, class = "gameFlexBox">
+                <button onclick = "declareSet()", id = "name2", class = "name"> </button>
+                <div style = "display:flex; justify-content:space-between; align-items:center; width:100%; flex-grow:2">
+                    <button onclick = "doNextTurn(this)", id = "name1", class = "name"></button>
+                    <button onclick = "doNextTurn(this)", id = "name3", class = "name"></button>
+                </div>
+                Selected Card:
+                <div style = height: fit-content>
+                    <select id="rankSelection"></select> &nbsp; of &nbsp; <select id="suitSelection"></select>
+                </div>
 
+                <button id="nextTurnButton" onclick = "doNextTurn(players)", style = "height: fit-content; position: absolute; top: 10px; right: 10px"> Next Turn </button>
+            
+                <div id = "name0" style = "display:flex; justify-content:center; width:100%; overflow:scroll"> </div>
+            </div>
+
+            <div class = "gameLog"> 
+                <table id = "gameLogTable", style = "width:fit-content"> </table>
+            </div>
         </div>
 
-        <!-- Game Log -->
-        <div class = "gameLog"> 
-            <table id = "gameLogTable" style = "margin: 20px; display: inline">  
-            </table>
-        </div>
+        
         
     </div>
-
 </body>
 
 <!-- Include Java Fish -->
@@ -169,11 +169,11 @@
         if (currentPlayer.isComputer) {
             thing = document.getElementById("name1").disabled = true
             document.getElementById("name3").disabled = true
-            document.getElementById("nextTurnButton").hidden = false
+            document.getElementById("nextTurnButton").disabled = false
         } else {
             document.getElementById("name1").disabled = false
             document.getElementById("name3").disabled = false
-            document.getElementById("nextTurnButton").hidden = "hidden"
+            document.getElementById("nextTurnButton").disabled = true
         }
     }
 
@@ -198,7 +198,7 @@
 <!-- setUpGame() -->
 <script>
     function setUpGame() {
-        document.getElementById("gameContents").hidden = false
+        document.getElementById("gameContents").style.display = "flex"
         document.getElementById("gameLogTable").innerHTML = ""
         players = setUpPlayers(["Huit", "Conan", "Ana", "Hasan"], [false, true, true, true])
         currentPlayer = players[0]
@@ -226,26 +226,27 @@
 
         const logTable = document.getElementById("gameLogTable")
         let row = logTable.insertRow(0);
+        let cell = row.insertCell(0)
         
 
         result = currentPlayer.askForCard(target, card, players)
 
         if (result != null) {
-            row.innerHTML = `${currentPlayer.name}: ${target.name}, do you have the ${card.symbol}? <br>`
+            cell.innerHTML = `<b>${currentPlayer.name}:</b> ${card.symbol}? <br>`
         } else {
             alert("You can't ask for that card")
+            return
         }
 
         updateHands(players)
-
-        
-        row = logTable.insertRow(1);
+        cell.innerHTML += `<b>${target.name}: <b>`
 
         if (result == false) {
-            row.innerHTML = `${target.name}: no. <br><br>`
+            cell.innerHTML += "no."
             currentPlayer = target
         } else if (result == true) {
-            row.innerHTML = `${target.name}: yes. <br><br>`
+            cell.innerHTML += "yes."
+
         }
         updateVisibleButtons()
     }

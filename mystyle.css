@@ -24,6 +24,7 @@ h1 {
 
 button {
     height: 40px;
+    width: 120px;
     border: 2px solid wheat;
     background-color: cornsilk;
     border-radius: 5px;
@@ -35,14 +36,15 @@ button {
     cursor: pointer;
 }
 
-button.name  {
-    height: 40px;
-    width: 120px;
-}
-
 button:hover {
     background-color: navy; 
-    color: white;
+    color: wheat;
+}
+
+button.name {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%
 }
 
 button:disabled {
@@ -76,7 +78,7 @@ select{
     height: 40px;
     border-radius: 5px;
     padding: 5px;
-    font-size: 16px;
+    font-size: 16pt;
     font-family: 'Luminari', fantasy;
     color: navy;
     border: 2px solid wheat;
@@ -94,16 +96,10 @@ select>option{
     border: 2px solid navy;
 }
 
-tr {
-    margin-left: auto; 
-    margin-right: auto;
-    width: fit-content; 
-   
-    display: block;
-}
 
 td {
-    margin-left: auto;
-    margin-right: auto;
-    width: fit-content;
+    background: white;
+    border: 2px solid navy; 
+    border-radius: 5px; 
+    padding: 10px;
 }
