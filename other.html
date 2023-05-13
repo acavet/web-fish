@@ -11,13 +11,18 @@
 <body>
     <h1>Fish Game</h1>
 
-    <button onclick = "generateGameID()"> New Game </button>
-    <p id = "gameId"></p>
-    <br>
-    <button onclick = "joinGame()"> Join Game </button> 
-    <input id = "joinGameId", placeholder = "Game ID">
-    <input id = "joinGameName", placeholder = "Name">
-    <br>
+    <div>
+        <button onclick = "generateGameID()"> New Game </button> 
+        <br>
+        <input id = "gameIdInput", placeholder = "Game ID", oninput = "updateJoinButton()">
+        <button id = "copyButton" style = "width: fit-content", onclick="copyGameId()", hidden = true>Copy</button>
+        <br>
+        <input id = "nameInput", oninput = "updateJoinButton()" placeholder = "Name">
+        <br>
+        <button id = "joinButton", onclick = "joinGame()", disabled = true> Join Game </button> 
+    </div>
+    
+    <h2>Joined Players: </h2>
     <ul>
         <li id = "player0"></li>
         <li id = "player1"></li>
@@ -38,9 +43,9 @@
                 <button onclick = "declareSet()", id = "name2", class = "name"> </button>
                 
                 <div id = "middleRow" style = "display:flex; justify-content:space-between; align-items:center; width:100%; flex-grow:2">
-                    <button onclick = "doNextTurn(this)", id = "name1", class = "name"></button>
+                    <button onclick = "askForCard(this)", id = "name1", class = "name"></button>
                     <div id = "setsDiv", style = "display:flex; justify-content:space-around; gap: 10px"> </div>
-                    <button onclick = "doNextTurn(this)", id = "name3", class = "name"></button>
+                    <button onclick = "askForCard(this)", id = "name3", class = "name"></button>
                 </div>
                 Selected Card:
                 <div style = height: fit-content>
@@ -49,7 +54,7 @@
 
                 <p id = "scoreBoard", style="height: fit-content; position: absolute; top: 10px; left: 10px; margin: 0px"> Score: 0 - 0 </p>
 
-                <button id="nextTurnButton" onclick = "doNextTurn(players)", style = "height: fit-content; position: absolute; top: 10px; right: 10px"> Next Turn </button>
+                <button id="nextTurnButton" onclick = "doNextTurn()", style = "height: fit-content; position: absolute; top: 10px; right: 10px"> Next Turn </button>
             
                 <div id = "name0" style = "display:flex; justify-content:center; width:100%; overflow:scroll"> </div>
             </div>
@@ -68,6 +73,26 @@
 <!-- Global Variables -->
 <script> 
     let thisPlayer = null
+</script>
+
+<!-- HTML functions -->
+<script>
+    function updateJoinButton() {
+        const nameInput = document.getElementById("nameInput")
+        const gameIdInput = document.getElementById("gameIdInput")
+        const joinButton = document.getElementById("joinButton")
+
+        if (nameInput.value.trim() == "" || gameIdInput.value.trim() == "") {
+            joinButton.disabled = true
+        } else {
+            joinButton.disabled = false
+        }
+    }
+
+    function copyGameId() {
+        gameIdInput = document.getElementById("gameIdInput")
+        navigator.clipboard.writeText(gameIdInput.value);
+    }
 </script>
 
 <!-- Update functions -->
@@ -95,8 +120,6 @@
     // Show which cards are in your hand, and (todo) how many cards other players have
     function updateHands(game) {
 
-        console.log(thisPlayer)
-        console.log(thisPlayer.hand[0])
         document.getElementById("name1").innerText = thisPlayer.opponents[0].name
         document.getElementById("name2").innerText = thisPlayer.partner.name
         document.getElementById("name3").innerText = thisPlayer.opponents[1].name
@@ -105,7 +128,6 @@
         handDiv.innerHTML = ""
         
         for (let i = 0; i < thisPlayer.hand.length; i++) {
-
             let card = document.createElement("div")
             card.className = "card"
             card.innerText = thisPlayer.hand[i].symbol
@@ -119,14 +141,30 @@
 
     // Updates whether "Ask" or "Next Turn" is divisble
     function updateVisibleButtons(game) {
-        if (game.currentPlayer.isComputer) {
-            document.getElementById("name1").disabled = true
-            document.getElementById("name3").disabled = true
-            document.getElementById("nextTurnButton").disabled = false
-        } else {
+        if (game.currentPlayer != undefined && game.currentPlayer.name == thisPlayer.name) {
             document.getElementById("name1").disabled = false
             document.getElementById("name3").disabled = false
+        } else {
+            document.getElementById("name1").disabled = true
+            document.getElementById("name3").disabled = true
+        }
+
+        if (game.currentPlayer.isComputer) {
+            document.getElementById("nextTurnButton").disabled = false
+        } else {
             document.getElementById("nextTurnButton").disabled = true
+        }
+    }
+
+    function updateLogs(game) {
+        const logTable = document.getElementById("gameLogTable")
+        logTable.innerHTML = ""
+
+        for (const log of game.logs) {
+            let row = logTable.insertRow(0);
+            let cell = row.insertCell(0)
+            cell.innerHTML = `${log.askerName}: ${log.cardSymbol}? <br> ${log.targetName}: ${log.result}`
+
         }
     }
 
@@ -154,79 +192,88 @@
         for (const card of deck) {
             if (card.equals(theCard)) return card
         }
-
-        assert(false)
     }
 </script>
 
-<!-- doNextTurn() -->
 <script>
+
+    function askForCard(button) {
+        targetName = button.textContent
+        card = getCard()
+
+        const payload = {
+            "method": "askForCard",
+            "asker": document.getElementById("nameInput").value,
+            "targetName": targetName,
+            "card": card,
+            "gameId": gameId
+        }
+
+        ws.send(JSON.stringify(payload))
+    }
+
+
     function doNextTurn(button = undefined) {
-        let target = null
-        let card = null
 
-        if (currentPlayer.isComputer) {
-            currentPlayer.tryComputerDeclare(players)
-            target = currentPlayer.getComputerTarget(players)
-            card = currentPlayer.getComputerCard(target)
-        } else {
-            target = getTarget(button.textContent)
-            card = getCard()
+        const payload = {
+            "method": "doComputerTurn",
+            "gameId": gameId
         }
 
-       
-        result = currentPlayer.askForCard(target, card, players)
+        ws.send(JSON.stringify(payload))
 
-        if (result == null) {
-            currentPlayer = findNextPlayer(currentPlayer)
-            return
-        }
+        // result = currentPlayer.askForCard(target, card, players)
 
-        const logTable = document.getElementById("gameLogTable")
-        let row = logTable.insertRow(0);
-        let cell = row.insertCell(0)
-        cell.innerHTML = `<b>${currentPlayer.name}:</b> ${card.symbol}? <br>`
+        // if (result == null) {
+        //     currentPlayer = findNextPlayer(currentPlayer)
+        //     return
+        // }
+
+        // const logTable = document.getElementById("gameLogTable")
+        // let row = logTable.insertRow(0);
+        // let cell = row.insertCell(0)
+        // cell.innerHTML = `<b>${currentPlayer.name}:</b> ${card.symbol}? <br>`
         
 
-        updateHands(players)
-        cell.innerHTML += `<b>${target.name}: <b>`
+        // updateHands(players)
+        // cell.innerHTML += `<b>${target.name}: <b>`
 
-        if (result == false) {
-            cell.innerHTML += "no."
-            currentPlayer = findNextPlayer(target)
-        } else if (result == true) {
-            cell.innerHTML += "yes."
-            currentPlayer = findNextPlayer(currentPlayer)
-        }
-        updateVisibleButtons()
+        // if (result == false) {
+        //     cell.innerHTML += "no."
+        //     currentPlayer = findNextPlayer(target)
+        // } else if (result == true) {
+        //     cell.innerHTML += "yes."
+        //     currentPlayer = findNextPlayer(currentPlayer)
+        // }
+        // updateVisibleButtons()
     }
 
 </script>
 
 <script>
     function declareSet() {
-        const card = getCard()
-        thisPlayer.declareSet(card, players)
-        updateHands(players)
+        // const card = getCard()
+        // thisPlayer.declareSet(card, players)
+        // updateHands(players)
 
-        let name3 = document.getElementById("name3")
+        // let name3 = document.getElementById("name3")
 
-        let setsDiv = document.getElementById("setsDiv")
-        let setDiv = document.createElement("div")
-        setDiv.style = "position:relative; width: 100px; height: 100px"
+        // let setsDiv = document.getElementById("setsDiv")
+        // let setDiv = document.createElement("div")
+        // setDiv.style = "position:relative; width: 100px; height: 100px"
 
-        for (const c of card.set) {
-            let cardDiv = document.createElement("div")
-            cardDiv.classList.add("smallCard")
-            const rotateAmount = -15 + Math.floor(Math.random() * 30)
-            cardDiv.style.transform = `rotate(${rotateAmount}deg)`
-            cardDiv.innerText = c.symbol
-            setDiv.appendChild(cardDiv)
-        }
+        // for (const c of card.set) {
+        //     let cardDiv = document.createElement("div")
+        //     cardDiv.classList.add("smallCard")
+        //     const rotateAmount = -15 + Math.floor(Math.random() * 30)
+        //     cardDiv.style.transform = `rotate(${rotateAmount}deg)`
+        //     cardDiv.innerText = c.symbol
+        //     setDiv.appendChild(cardDiv)
+        // }
 
-        setsDiv.appendChild(setDiv)
+        // setsDiv.appendChild(setDiv)
 
-        document.getElementById("scoreBoard").textContent = `Score: ${thisPlayer.points + thisPlayer.partner.points} - ${thisPlayer.opponents[0].points + thisPlayer.opponents[1].points}`
+        // document.getElementById("scoreBoard").textContent = `Score: ${thisPlayer.points + thisPlayer.partner.points} - ${thisPlayer.opponents[0].points + thisPlayer.opponents[1].points}`
     }
 
 </script>
@@ -237,9 +284,8 @@
     let gameId = null
 
     const reviver = function(key, value) {
-        
-        if (value.name !== undefined) {
-            console.log("it's a player!")
+
+        if (value.hand !== undefined) { // It's a player
 
             let player = new Player(value.name)
             player.hand = value.hand
@@ -250,14 +296,21 @@
 
             return player
             
+        } else if (value.rank !== undefined) { // It's a card
+            let card = new Card(value.rank, value.suit)
+            return card
+
         }
 
         return value;
     }
 
     function generateGameID() {
+        document.getElementById("copyButton").hidden = false
+        document.getElementById("gameIdInput").readOnly = true
+
         const payload = {
-            "method": "create",
+            "method": "createGame",
             "clientId": clientId
         }
         ws.send(JSON.stringify(payload))
@@ -265,12 +318,17 @@
 
     function joinGame() {
         // If not already in a game, read text in from box
-        const newId = document.getElementById("joinGameId").value
 
-        if (gameId === null && newId != "") {
-            gameId = newId;
-            name = document.getElementById("joinGameName").value
+        const gameIdInput = document.getElementById("gameIdInput")
+        const nameInput = document.getElementById("nameInput")
+
+        if (gameId === null && gameIdInput.value != "") {
+            gameId = gameIdInput.value
+            name = nameInput.value
         }
+
+        gameIdInput.readOnly = true
+        nameInput.readOnly = true
 
         // Join game
         const payload = {
@@ -293,23 +351,22 @@
 
     function updateGame(game) {
         updateVisibleButtons(game)
-        updateCardSelections(game)
         updateHands(game)
-
+        updateLogs(game)
     }
 
     function setUpGame(game) {
         document.getElementById("gameContents").style.display = "flex"
         document.getElementById("gameLogTable").innerHTML = ""
 
+        updateCardSelections(game)
 
         for (const player of game.players) {
-            if (player.name == document.getElementById("joinGameName").value) {
+            if (player.name == document.getElementById("nameInput").value) {
                 thisPlayer = player
             }
         }
 
-        
     }
 
     ws.onmessage = message => {
@@ -318,13 +375,17 @@
         if (response.game !== undefined) {
             for (const player of response.game.players) {
                 player.getPartners(response.game.players)
+    
+                if (player.name == document.getElementById("nameInput").value) {
+                    thisPlayer = player
+                }
             }
         }
 
         switch (response.method) {
-            case "create":
-                document.getElementById("gameId").textContent = response.game.id;
-                document.getElementById("joinGameId").value = response.game.id;
+            case "gameCreated":
+                document.getElementById("gameIdInput").value = response.game.id;
+                updateJoinButton()
                 break;
             case "connect":
                 clientId = response.clientId;

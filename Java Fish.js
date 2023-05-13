@@ -135,9 +135,11 @@ class Player {
     hasCard(card) {
         for (let i = 0; i < this.hand.length; i++) {
             if (this.hand[i].equals(card)) {
-                return i
+                return true
             }
         }
+
+        return false
     }
 
     removeCard(card) {
@@ -194,9 +196,9 @@ class Player {
         }
 
         if (target.hasCard(card)) {
-
             target.removeCard(card);
             this.addCard(card);
+
 
             // No one else has it
             for (const player of players) {
@@ -379,4 +381,5 @@ module.exports = {
     gameIsOver,
     setUpPlayers,
     dealCards,
+    findNextPlayer,
 }

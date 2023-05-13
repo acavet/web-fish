@@ -212,7 +212,7 @@ wsServer.on("request", request => {
             games[gameId].turnNumber += 1;
 
             // Update players on what turn happened
-            console.log("WAS A GOOD ASK:"+goodAsk)
+            console.log("WAS A GOOD ASK:" + goodAsk)
             let requestText = requesterName + " requested " + requestedCard.symbol + " from " + requesteeName;
             let successText = " and was " + (goodAsk ? " " : "not ") + "successful, so the next player is " + nextPlayer.name;
 
@@ -237,6 +237,7 @@ wsServer.on("request", request => {
             games[gameId].clients.forEach(c => {
                 clients[c.clientId].connection.send(JSON.stringify(payload))
             });
+
             const payload2 = {
                 "method": "alertTurn",
                 "name": nextName

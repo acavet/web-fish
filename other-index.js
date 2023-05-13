@@ -24,6 +24,7 @@ const MAX_PLAYERS = 4;
 const TOTAL_PLAYERS = 4;
 const fs = require("fs");
 var available_game_names = fs.readFileSync('./fishnames.txt').toString().split("\n");
+let computerNames = ["Conan", "Ana", "Hasan"]
 
 // Helper function to avoid player circles
 const replacerFunc = () => {
@@ -42,6 +43,28 @@ const replacerFunc = () => {
     };
 };
 
+const reviver = function(key, value) {
+
+    if (value.hand !== undefined) { // It's a player
+
+        let player = new jf.Player(value.name)
+        player.hand = value.hand
+        player.cardStatusD
+        player.points = value.points
+        player.cardStatusDictionary = value.cardStatusDictionary
+        player.isComputer = value.isComputer
+
+        return player
+        
+    } else if (value.rank !== undefined) { // It's a card
+        let card = new jf.Card(value.rank, value.suit)
+        return card
+
+    }
+
+    return value;
+}
+
 // Server
 const wsServer = new websocketServer({
     "httpServer": httpServer
@@ -49,27 +72,25 @@ const wsServer = new websocketServer({
 
 function createGame(result) {
     const clientId = result.clientId;
-    const gameId = available_game_names.splice(Math.floor(Math.random() * available_game_names.length), 1);
+    const gameId = getGameId()
 
-    // Add game id and metadata to game dictionary
-    games[gameId] = {
+    const newGame = {
         "id": gameId,
         "clients": [],
         "players": [],
-        "playing": false,
-        "message": "",
-        "deck": undefined,
-        "turn": "",
-        "turnNumber": 0,
-        "isAiTurn": false,
+        "logs": [],
+        "currentPlayer": undefined,
         "starterClientId": result.clientId,
         "owner": ""
     }
 
+    // Add game id and metadata to game dictionary
+    games[gameId] = newGame
+
     // Data to return back to game HTML
     const payload = {
-        "method": "create",
-        "game" : games[gameId]
+        "method": "gameCreated",
+        "game": newGame
     }
 
     clients[clientId].connection.send(JSON.stringify(payload))
@@ -112,7 +133,6 @@ function joinGame(result, connection) {
     }
 
     for (const client of game.clients) {
-
         clients[client.clientId].connection.send(JSON.stringify(payload, replacerFunc()))
     }
 }
@@ -121,12 +141,15 @@ function startGame(game) {
     const nameList = game.clients.map(client => client.name)
 
     while (nameList.length < 4) {
-        nameList.push("Computer")
+        const name = getComputerName()
+        console.log(name)
+        nameList.push(name)
     }
 
     game.players = jf.setUpPlayers(nameList, [false, true, true, true])
 
     game.currentPlayer = game.players[0]
+
     jf.dealCards(game.players)
 
     const payload = {
@@ -135,14 +158,63 @@ function startGame(game) {
     }
     
     for (const client of game.clients) {
-
         clients[client.clientId].connection.send(JSON.stringify(payload, replacerFunc()))
     }
 
-    updateGame()
+    updateGame(game)
 }
 
-function updateGame() {
+function updateGame(game) {
+
+    const payload = {
+        "method": "update",
+        "game": game
+    }
+    
+    for (const client of game.clients) {
+        clients[client.clientId].connection.send(JSON.stringify(payload, replacerFunc()))
+    }
+}
+
+function askForCard(game, askerName, targetName, card) {
+    asker = game.players.find(player => player.name == askerName)
+    target = game.players.find(player => player.name == targetName);
+
+    const result = asker.askForCard(target, card, game.players)
+
+    let log = {
+        "askerName": asker.name,
+        "cardSymbol": card.symbol,
+        "targetName": target.name,
+        "result": undefined
+    }
+
+    if (result == null) {
+        game.currentPlayer = jf.findNextPlayer(game.currentPlayer)
+        return
+    }
+
+    if (result == false) {
+        log.result = "no"
+        game.currentPlayer = jf.findNextPlayer(target)
+    } else if (result == true) {
+        log.result = "yes"
+        game.currentPlayer = jf.findNextPlayer(game.currentPlayer)
+    }
+
+    game.logs.push(log)
+    updateGame(game)
+
+}
+
+function doComputerTurn(game) {
+
+    console.log(game.players)
+    const target = game.currentPlayer.getComputerTarget(game.players)
+
+
+    const card = game.currentPlayer.getComputerCard(target)
+    askForCard(game, game.currentPlayer.name, target.name, card)
 
 }
 
@@ -154,10 +226,18 @@ wsServer.on("request", request => {
 
     // Recieve instructions via JSON message
     connection.on("message", message => {
-        const result = JSON.parse(message.utf8Data)
+        const result = JSON.parse(message.utf8Data, reviver)
+
+
+        if (result.gameId !== undefined) {
+            game = games[result.gameId]
+            for (const player of game.players) {
+                player.getPartners(game.players)
+            }
+        }
 
         switch (result.method) {
-            case "create":
+            case "createGame":
                 createGame(result)
                 break;
             case "join":
@@ -166,11 +246,15 @@ wsServer.on("request", request => {
             case "startGame":
                 startGame(games[result.gameId])
                 break;
+            case "askForCard":
+                askForCard(games[result.gameId], result.asker, result.targetName, result.card)
+                break;
+            case "doComputerTurn":
+                doComputerTurn(games[result.gameId])
+                break;
         }
 
     })
-
-    
 
     // Upon connection to server, generate a new clientId and send back to client in JSON payload
     const clientId = guid();
@@ -189,5 +273,17 @@ wsServer.on("request", request => {
 function S4() {
     return (((1+Math.random())*0x10000)|0).toString(16).substring(1); 
 }
-const guid = () => (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
+
+function guid() {
+    return (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
+}
+
+function getGameId() {
+    return available_game_names.splice(Math.floor(Math.random() * available_game_names.length), 1)[0];
+}
  
+
+function getComputerName() {
+    return computerNames.splice(Math.floor(Math.random() * computerNames.length), 1)[0];
+
+}
