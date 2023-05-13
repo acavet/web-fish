@@ -140,13 +140,16 @@ function joinGame(result, connection) {
 function startGame(game) {
     const nameList = game.clients.map(client => client.name)
 
+    let isAIList = nameList.map(function (name) { return false; })
+
     while (nameList.length < 4) {
         const name = getComputerName()
         console.log(name)
         nameList.push(name)
+        isAIList.push(true)
     }
 
-    game.players = jf.setUpPlayers(nameList, [false, true, true, true])
+    game.players = jf.setUpPlayers(nameList, isAIList)
 
     game.currentPlayer = game.players[0]
 
