@@ -29,18 +29,15 @@ var available_game_names = fs.readFileSync('./fishnames.txt').toString().split("
 const replacerFunc = () => {
     // const visited = new WeakSet();
     return (key, value) => {
-        // if (key === undefined || value === undefined) {
-        //     return "";
-        //   }
-      if (value instanceof jf.Player) {
-        return value.name;
+      if (value instanceof jf.Player) { 
+
+        if (typeof(value.partner) === "object") {
+            value.partner = value.partner.name
+            value.opponents[0] = value.opponents[0].name
+            value.opponents[1] = value.opponents[1].name
+        }
+        
       }
-    //   if (typeof value === "object" && value !== null) {
-    //     if (visited.has(value)) {
-    //       return ;
-    //     }
-    //     visited.add(value);
-    //   }
       return value;
     };
 };
@@ -80,7 +77,6 @@ function createGame(result) {
 
 function joinGame(result, connection) {
 
-    console.log("joining game...")
     const clientId = result.clientId;
     const name = result.name;
     const gameId = result.gameId;
@@ -102,8 +98,6 @@ function joinGame(result, connection) {
         connection.send(JSON.stringify(payload));
         return;
     }
-
-    console.log("still joining...")
     
     // Add client to game 
     game.clients.push({
@@ -118,8 +112,38 @@ function joinGame(result, connection) {
     }
 
     for (const client of game.clients) {
+
         clients[client.clientId].connection.send(JSON.stringify(payload, replacerFunc()))
     }
+}
+
+function startGame(game) {
+    const nameList = game.clients.map(client => client.name)
+
+    while (nameList.length < 4) {
+        nameList.push("Computer")
+    }
+
+    game.players = jf.setUpPlayers(nameList, [false, true, true, true])
+
+    game.currentPlayer = game.players[0]
+    jf.dealCards(game.players)
+
+    const payload = {
+        "method": "gameStarted",
+        "game": game
+    }
+    
+    for (const client of game.clients) {
+
+        clients[client.clientId].connection.send(JSON.stringify(payload, replacerFunc()))
+    }
+
+    updateGame()
+}
+
+function updateGame() {
+
 }
 
 wsServer.on("request", request => {
@@ -140,15 +164,7 @@ wsServer.on("request", request => {
                 joinGame(result, connection)
                 break;
             case "startGame":
-                let game = games[result.gameId];
-                const payload = {
-                    "method": "gameStarted",
-                    "game": game
-                }
-                
-                for (const client of game.clients) {
-                    clients[client.clientId].connection.send(JSON.stringify(payload, replacerFunc()))
-                }
+                startGame(games[result.gameId])
                 break;
         }
 

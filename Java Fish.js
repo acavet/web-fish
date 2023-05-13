@@ -58,22 +58,14 @@ class Card {
     equals(other) {
         return this.rank == other.rank && this.suit == other.suit
     }
-}
 
-function shuffle(array) {
-    let currentIndex = array.length 
-    let randomIndex;
-  
-    while (currentIndex != 0) {
-  
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-  
-      [array[currentIndex], array[randomIndex]] = [
-        array[randomIndex], array[currentIndex]];
-    }
-  
-    return array;
+    toJSON() {
+		return {
+			rank: this.rank,
+			suit: this.suit,
+			symbol: this.symbol
+		};
+	}
 }
 
 function makeNewDeck() {
@@ -101,16 +93,58 @@ const deck = makeNewDeck()
     
 class Player {
     points = 0;
-    opponents = [];
     cardStatusDictionary = {};
+    opponents = [];
+    hand = [];
+    partner;
     isComputer;
 
     constructor(name) {
         this.name = name
-        this.hand = new Set()
         
         for (const card of deck) {
             this.cardStatusDictionary[card.symbol]= CardStatus.unknown
+        }
+    }
+
+    getPartners(players) {
+        for (let i = 0; i < players.length; i++) {
+            players[i].partner = players[(i+2) % 4]
+            players[i].opponents = []
+            players[i].opponents.push(players[(i+1) % 4])
+            players[i].opponents.push(players[(i+3) % 4])
+        }
+    }
+
+    addCard(card) {
+        for (let i = 0; i < this.hand.length; i++) {
+            if (this.hand[i].suit == card.suit) {
+                if (this.hand[i].rank > card.rank) {
+                    this.hand.splice(i, 0, card)
+                    return
+                }
+            } else if (this.hand[i].suit > card.suit) {
+                this.hand.splice(i, 0, card)
+                return
+            }
+        }
+
+        this.hand.splice(this.hand.length, 0, card)
+    }
+
+    hasCard(card) {
+        for (let i = 0; i < this.hand.length; i++) {
+            if (this.hand[i].equals(card)) {
+                return i
+            }
+        }
+    }
+
+    removeCard(card) {
+        for (let i = 0; i < this.hand.length; i++) {
+            if (this.hand[i].equals(card)) {
+                return this.hand.splice(i, 1)
+            }
         }
     }
 
@@ -159,10 +193,10 @@ class Player {
             }
         }
 
-        if (target.hand.has(card)) {
+        if (target.hasCard(card)) {
 
-            target.hand.delete(card);
-            this.hand.add(card);
+            target.removeCard(card);
+            this.addCard(card);
 
             // No one else has it
             for (const player of players) {
@@ -185,10 +219,10 @@ class Player {
 
         // Go through all cards of deck
         for (const c of card.set) {
-            if (this.hand.has(c)) {
-                this.hand.delete(c)
-            } else if (this.partner.hand.has(c)) {
-                this.partner.hand.delete(c)
+            if (this.hasCard(c)) {
+                this.removeCard(c)
+            } else if (this.partner.hasCard(c)) {
+                this.partner.removeCard(c)
             } else {
                 goodDeclaration = false
             }
@@ -199,7 +233,7 @@ class Player {
         } else {
             this.opponents[0].points += 1
             for (const c of card.set) {
-                for (let player of players) player.hand.delete(c)
+                for (let player of players) player.removeCard(c)
             }
         }
         
@@ -210,7 +244,7 @@ class Player {
     getComputerCard(target) {
 
         // Possible choices — cards you can ask for, and that you don't have
-        const askingCards = this.allowedAskingCards.filter(x => !this.hand.has(x))
+        const askingCards = this.allowedAskingCards.filter(x => !this.hasCard(x))
 
         // Ask for all cards you know they have
         for (const card of askingCards) {
@@ -261,7 +295,7 @@ class Player {
             let shouldDeclare = true
             for (const c of card.set) {
 
-                if (!(this.hand.has(c) || this.partner.cardStatusDictionary[c.symbol] == CardStatus.inHand ||
+                if (!(this.hasCard(c) || this.partner.cardStatusDictionary[c.symbol] == CardStatus.inHand ||
                 (this.opponents[0].cardStatusDictionary[c.symbol] == CardStatus.notInHand && 
                     this.opponents[1].cardStatusDictionary[c.symbol] == CardStatus.notInHand))) {
                     
@@ -278,9 +312,6 @@ class Player {
         }
     }
 }
-
-
-
 
 function gameIsOver(players) {
     for (const player of players) {
@@ -300,23 +331,29 @@ function setUpPlayers(nameList, isComputerList) {
     let players = [player1, player2, player3, player4]
 
     for (let i = 0; i < players.length; i++) {
-        players[i].partner = players[(i+2) % 4]
-
-        players[i].opponents.push(players[(i+1) % 4])
-        players[i].opponents.push(players[(i+3) % 4])
         players[i].isComputer = isComputerList[i]
+        players[i].getPartners(players)
     }
 
     return players
 }
 
-
-
 function dealCards(players) {
-    shuffle(deck)
+
+    let currentIndex = deck.length 
+    let randomIndex;
+  
+    while (currentIndex != 0) {
+  
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+  
+      [deck[currentIndex], deck[randomIndex]] = [
+        deck[randomIndex], deck[currentIndex]];
+    }
 
     for (let i = 0; i < 52; i ++) {
-        players[i%4].hand.add(deck[i])
+        players[i%4].addCard(deck[i])
     }
 }
 
@@ -337,7 +374,6 @@ function findNextPlayer(goal) {
 
 module.exports = {
     Card,
-    shuffle,
     makeNewDeck,
     Player,
     gameIsOver,

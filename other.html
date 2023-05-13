@@ -67,16 +67,13 @@
 
 <!-- Global Variables -->
 <script> 
-    let currentPlayer = null
-    let players = []
-    let client = null
+    let thisPlayer = null
 </script>
 
-<!-- Helper functions -->
+<!-- Update functions -->
 <script>
-
     // Todo: Based on what you can ask for?
-    function updateCardSelections(players) {
+    function updateCardSelections(game) {
         const rankSelection = document.getElementById("rankSelection");
         rankSelection.innerHTML = ""
         for (let i = 2; i < 15; i++) {
@@ -95,39 +92,35 @@
 
     }
 
-    // Show which cards are in your hand, and how many cards other players have
-    // Currenly shows all cards to debug
-    function updateHands(players) {
+    // Show which cards are in your hand, and (todo) how many cards other players have
+    function updateHands(game) {
 
-        console.log(client)
-
-        document.getElementById("name1").innerText = client.opponents[0].name
-        document.getElementById("name2").innerText = client.partner.name
-        document.getElementById("name3").innerText = client.opponents[1].name
+        console.log(thisPlayer)
+        console.log(thisPlayer.hand[0])
+        document.getElementById("name1").innerText = thisPlayer.opponents[0].name
+        document.getElementById("name2").innerText = thisPlayer.partner.name
+        document.getElementById("name3").innerText = thisPlayer.opponents[1].name
     
-        const hand = document.getElementById("name0")
-        hand.innerHTML = ""
+        const handDiv = document.getElementById("name0")
+        handDiv.innerHTML = ""
         
-        for (let i = 0; i < client.sortedHand.length; i++) {
+        for (let i = 0; i < thisPlayer.hand.length; i++) {
 
             let card = document.createElement("div")
             card.className = "card"
-            card.innerText = client.sortedHand[i].symbol
-            hand.appendChild(card)
-
-            if (i == client.sortedHand.length-1) {
+            card.innerText = thisPlayer.hand[i].symbol
+            handDiv.appendChild(card)
+            if (i == thisPlayer.hand.length-1) {
                 card.style.margin = "0px";
             }
         }
         
-    
-
     }
 
     // Updates whether "Ask" or "Next Turn" is divisble
-    function updateVisibleButtons() {
-        if (currentPlayer.isComputer) {
-            thing = document.getElementById("name1").disabled = true
+    function updateVisibleButtons(game) {
+        if (game.currentPlayer.isComputer) {
+            document.getElementById("name1").disabled = true
             document.getElementById("name3").disabled = true
             document.getElementById("nextTurnButton").disabled = false
         } else {
@@ -136,6 +129,11 @@
             document.getElementById("nextTurnButton").disabled = true
         }
     }
+
+</script>
+
+<!-- Input functions -->
+<script>
 
     // Gets target based on selection
     function getTarget(name) {
@@ -159,7 +157,6 @@
 
         assert(false)
     }
-
 </script>
 
 <!-- doNextTurn() -->
@@ -209,7 +206,7 @@
 <script>
     function declareSet() {
         const card = getCard()
-        client.declareSet(card, players)
+        thisPlayer.declareSet(card, players)
         updateHands(players)
 
         let name3 = document.getElementById("name3")
@@ -229,7 +226,7 @@
 
         setsDiv.appendChild(setDiv)
 
-        document.getElementById("scoreBoard").textContent = `Score: ${client.points + client.partner.points} - ${client.opponents[0].points + client.opponents[1].points}`
+        document.getElementById("scoreBoard").textContent = `Score: ${thisPlayer.points + thisPlayer.partner.points} - ${thisPlayer.opponents[0].points + thisPlayer.opponents[1].points}`
     }
 
 </script>
@@ -238,6 +235,25 @@
     let ws = new WebSocket("ws://localhost:9090")
     let clientId = null
     let gameId = null
+
+    const reviver = function(key, value) {
+        
+        if (value.name !== undefined) {
+            console.log("it's a player!")
+
+            let player = new Player(value.name)
+            player.hand = value.hand
+            player.cardStatusD
+            player.points = value.points
+            player.cardStatusDictionary = value.cardStatusDictionary
+            player.isComputer = value.isComputer
+
+            return player
+            
+        }
+
+        return value;
+    }
 
     function generateGameID() {
         const payload = {
@@ -275,21 +291,35 @@
 
     }
 
+    function updateGame(game) {
+        updateVisibleButtons(game)
+        updateCardSelections(game)
+        updateHands(game)
+
+    }
+
     function setUpGame(game) {
         document.getElementById("gameContents").style.display = "flex"
         document.getElementById("gameLogTable").innerHTML = ""
-        const nameList = game.clients.map(client => client.name)
-        players = setUpPlayers(nameList, [false, true, true, true])
-        currentPlayer = players[0]
-        client = game.clients[clientId]
-        updateCardSelections(players)
-        dealCards(players)
-        updateHands(players)
-        updateVisibleButtons()
+
+
+        for (const player of game.players) {
+            if (player.name == document.getElementById("joinGameName").value) {
+                thisPlayer = player
+            }
+        }
+
+        
     }
 
     ws.onmessage = message => {
-        const response = JSON.parse(message.data);
+        const response = JSON.parse(message.data, reviver);
+
+        if (response.game !== undefined) {
+            for (const player of response.game.players) {
+                player.getPartners(response.game.players)
+            }
+        }
 
         switch (response.method) {
             case "create":
@@ -308,6 +338,10 @@
                 break;
             case "gameStarted":
                 setUpGame(response.game)
+                updateGame(response.game)
+                break;
+            case "update":
+                updateGame(response.game)
                 break;
         }
     }
