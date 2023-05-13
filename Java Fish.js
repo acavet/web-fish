@@ -340,12 +340,7 @@ module.exports = {
     shuffle,
     makeNewDeck,
     Player,
-    getCardInput,
-    getTargetInput,
-    doTurn,
     gameIsOver,
     setUpPlayers,
     dealCards,
-    printStatus,
-    test
 }

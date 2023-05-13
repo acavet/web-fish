@@ -124,8 +124,7 @@
             });
         })
 
-        
-
+    
         // Connect event logic through 
         ws.onmessage = message => {
             
@@ -149,8 +148,7 @@
                 gameIdTxt.textContent = response.game.id;
                 console.log("game successfully created with id " + response.game.id);  
             }
-            
-
+        
             // Fish text play
             if (response.method === "fishTextUpdate") {
                 // Add fish gameplay text

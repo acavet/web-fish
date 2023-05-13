@@ -11,17 +11,22 @@
 <body>
     <h1>Fish Game</h1>
 
-    <!-- <button> New Game </button> [Generated ID here]
+    <button onclick = "generateGameID()"> New Game </button>
+    <p id = "gameId"></p>
     <br>
-    <button> Join Game </button> <input placeholder = "Game ID">
+    <button onclick = "joinGame()"> Join Game </button> 
+    <input id = "joinGameId", placeholder = "Game ID">
+    <input id = "joinGameName", placeholder = "Name">
     <br>
     <ul>
-        <li> player1 </li>
-        <li> player2 </li>
+        <li id = "player0"></li>
+        <li id = "player1"></li>
+        <li id = "player2"></li>
+        <li id = "player3"></li>
     </ul>
-     -->
+    
 
-    <button onclick = "setUpGame()"> Start Game </button>
+    <button onclick = "startGame()"> Start Game </button>
 
 
     <!-- all game contents, hidden until game starts -->
@@ -63,7 +68,8 @@
 <!-- Global Variables -->
 <script> 
     let currentPlayer = null
-    let players = [] 
+    let players = []
+    let client = null
 </script>
 
 <!-- Helper functions -->
@@ -93,32 +99,28 @@
     // Currenly shows all cards to debug
     function updateHands(players) {
 
-        for (const i in players) {
-            const name = document.getElementById("name" + i)
-            let player = players[i]
-            name.innerHTML = ""
+        console.log(client)
 
-            if (i != 0) {
-                // nameText = player.name + ": ";
-                // nameText += `${player.hand.size} cards`
-                // name.innerHTML = nameText
-                name.innerHTML = player.name
-                continue
+        document.getElementById("name1").innerText = client.opponents[0].name
+        document.getElementById("name2").innerText = client.partner.name
+        document.getElementById("name3").innerText = client.opponents[1].name
+    
+        const hand = document.getElementById("name0")
+        hand.innerHTML = ""
+        
+        for (let i = 0; i < client.sortedHand.length; i++) {
+
+            let card = document.createElement("div")
+            card.className = "card"
+            card.innerText = client.sortedHand[i].symbol
+            hand.appendChild(card)
+
+            if (i == client.sortedHand.length-1) {
+                card.style.margin = "0px";
             }
-            
-            for (let i = 0; i < player.sortedHand.length; i++) {
-
-                let card = document.createElement("div")
-                card.className = "card"
-                card.innerText = player.sortedHand[i].symbol
-                name.appendChild(card)
-
-                if (i == player.sortedHand.length-1) {
-                    card.style.margin = "0px";
-                }
-            }
-            
         }
+        
+    
 
     }
 
@@ -158,20 +160,6 @@
         assert(false)
     }
 
-</script>
-
-<!-- setUpGame() -->
-<script>
-    function setUpGame() {
-        document.getElementById("gameContents").style.display = "flex"
-        document.getElementById("gameLogTable").innerHTML = ""
-        players = setUpPlayers(["Huit", "Conan", "Ana", "Hasan"], [false, true, true, true])
-        currentPlayer = players[0]
-        updateCardSelections(players)
-        dealCards(players)
-        updateHands(players)
-        updateVisibleButtons()
-    }
 </script>
 
 <!-- doNextTurn() -->
@@ -221,7 +209,7 @@
 <script>
     function declareSet() {
         const card = getCard()
-        players[0].declareSet(card, players)
+        client.declareSet(card, players)
         updateHands(players)
 
         let name3 = document.getElementById("name3")
@@ -241,6 +229,89 @@
 
         setsDiv.appendChild(setDiv)
 
-        document.getElementById("scoreBoard").textContent = `Score: ${players[0].points + players[2].points} - ${players[1].points + players[3].points}`
+        document.getElementById("scoreBoard").textContent = `Score: ${client.points + client.partner.points} - ${client.opponents[0].points + client.opponents[1].points}`
     }
+
+</script>
+
+<script>
+    let ws = new WebSocket("ws://localhost:9090")
+    let clientId = null
+    let gameId = null
+
+    function generateGameID() {
+        const payload = {
+            "method": "create",
+            "clientId": clientId
+        }
+        ws.send(JSON.stringify(payload))
+    }
+
+    function joinGame() {
+        // If not already in a game, read text in from box
+        const newId = document.getElementById("joinGameId").value
+
+        if (gameId === null && newId != "") {
+            gameId = newId;
+            name = document.getElementById("joinGameName").value
+        }
+
+        // Join game
+        const payload = {
+            "method": "join",
+            "clientId": clientId,
+            "name": name,
+            "gameId": gameId
+        }
+        ws.send(JSON.stringify(payload))
+    }
+
+    function startGame() {
+        const payload = {
+            "method": "startGame",
+            "gameId": gameId
+        }
+        ws.send(JSON.stringify(payload));
+
+    }
+
+    function setUpGame(game) {
+        document.getElementById("gameContents").style.display = "flex"
+        document.getElementById("gameLogTable").innerHTML = ""
+        const nameList = game.clients.map(client => client.name)
+        players = setUpPlayers(nameList, [false, true, true, true])
+        currentPlayer = players[0]
+        client = game.clients[clientId]
+        updateCardSelections(players)
+        dealCards(players)
+        updateHands(players)
+        updateVisibleButtons()
+    }
+
+    ws.onmessage = message => {
+        const response = JSON.parse(message.data);
+
+        switch (response.method) {
+            case "create":
+                document.getElementById("gameId").textContent = response.game.id;
+                document.getElementById("joinGameId").value = response.game.id;
+                break;
+            case "connect":
+                clientId = response.clientId;
+                break;
+            case "playerJoined":
+                const game = response.game;
+                let nameList = game.clients.map(client => client.name);
+                for (let i = 0; i < nameList.length; i++) {
+                    document.getElementById("player" + i).textContent = nameList[i]
+                }
+                break;
+            case "gameStarted":
+                setUpGame(response.game)
+                break;
+        }
+    }
+    
+
+
 </script>

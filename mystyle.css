@@ -9,11 +9,6 @@ body {
     font-size: 16px;
     margin: 50px;
 }
-
-::selection {
-    color: black;
-    background: white;
-}
   
 h1 {
     color: var(--navy);
@@ -68,6 +63,7 @@ input {
     font-family: 'Luminari', fantasy;
     font-size: 16px;
     display: inline-block;
+
 }
 
 input[type="radio"] {
@@ -127,7 +123,7 @@ td {
     border: 2px solid navy;
     border-radius: 5px;
     font-size: 20pt;
-    position: fixed;
+    position: absolute;
 }
 
 .field {

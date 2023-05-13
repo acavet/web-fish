@@ -69,7 +69,6 @@ wsServer.on("request", request => {
         if (result.method === "create") {
             const clientId = result.clientId;
 
-
             //const gameId = guid();
             const gameId = available_game_names.splice(Math.floor(Math.random()*available_game_names.length), 1);
 
@@ -259,6 +258,7 @@ wsServer.on("request", request => {
         "method": "connect",
         "clientId": clientId
     };
+    
     connection.send(JSON.stringify(payload));
 })
 
